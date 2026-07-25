@@ -333,16 +333,19 @@ void FPS748FMCProfile::buttonPressed(const FMCButtonDef *button, XPLMCommandPhas
             return;
         }
 
-        datarefManager->set<double>(button->dataref.c_str(), phase == xplm_CommandBegin ? value : 0.0);
+        double phasedValue = phase == xplm_CommandBegin ? value : 0.0;
+        datarefManager->set<double>(button->dataref.c_str(), phasedValue);
 
-        if (IsSSGVersion()) {
-            // If the dataref contains "cdu1", also execute for "cdu2" because otherwise the SSG/CDU/LINE datarefs don't update.. Strange.
-            auto pos = button->dataref.find("cdu1");
-            if (pos != std::string::npos) {
-                std::string cdu2Dataref = button->dataref;
-                cdu2Dataref.replace(pos, 4, "cdu2");
-                datarefManager->set<double>(cdu2Dataref.c_str(), phase == xplm_CommandBegin ? value : 0.0);
-            }
+        // FJCC publishes one shared LINE_N buffer for both CDUs (last-writer-wins), so
+        // mirror every key to the sibling CDU to keep both on the same page.
+        std::string sibling = button->dataref;
+        size_t pos;
+        if ((pos = sibling.find("cdu1")) != std::string::npos) {
+            sibling.replace(pos, 4, "cdu2");
+            datarefManager->set<double>(sibling.c_str(), phasedValue);
+        } else if ((pos = sibling.find("cdu2")) != std::string::npos) {
+            sibling.replace(pos, 4, "cdu1");
+            datarefManager->set<double>(sibling.c_str(), phasedValue);
         }
     } else if (phase == xplm_CommandBegin && button->datarefType == FMCDatarefType::ADJUST_VALUE) {
         double currentValue = datarefManager->get<double>(button->dataref.c_str());
