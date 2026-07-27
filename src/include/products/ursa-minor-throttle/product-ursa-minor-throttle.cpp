@@ -144,7 +144,7 @@ void ProductUrsaMinorThrottle::update() {
         lastGForce = gForce;
 
         bool onGround = Dataref::getInstance()->getCached<bool>("sim/flightmodel/failures/onground_any");
-        uint8_t vibration = (uint8_t) std::min(255.0f, delta * vibrationMultiplier / (onGround ? 1.0f : 2.0f));
+        uint8_t vibration = (uint8_t) std::min(255.0f, delta * vibrationMultiplier / (onGround ? 1.0f : 1.5f));
         if (vibration < 6) {
             vibration = 0;
         }
