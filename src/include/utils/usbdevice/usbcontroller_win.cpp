@@ -4,6 +4,7 @@
 #include "usbcontroller.h"
 #include "usbdevice.h"
 
+#include <cctype>
 #include <dbt.h>
 #include <functional>
 #include <hidsdi.h>
@@ -21,7 +22,68 @@ DEFINE_GUID(GUID_DEVINTERFACE_HID, 0x4D1E55B2, 0xF16F, 0x11CF, 0x88, 0xCB, 0x00,
 USBController *USBController::instance = nullptr;
 
 static std::map<USBDevice *, std::string> devicePaths;
-static std::set<std::pair<uint16_t, uint16_t>> pendingDevices;
+// Group keys of live devices, and of the ones still queued for creation.
+static std::map<USBDevice *, std::string> deviceGroupKeys;
+static std::set<std::string> pendingDevices;
+
+static constexpr const char *kProductWideKeyPrefix = "vidpid";
+
+// Identifies the physical device behind an interface path, so a second
+// identical unit gets its own device object instead of being skipped as a
+// duplicate of the first.
+//
+// Paths look like \\?\hid#vid_xxxx&pid_xxxx[&col##]#{instance}#{guid}, where
+// {instance} is {prefix}&{parentHash}&{n}&{index}. Every top-level collection
+// and every USB interface of one device shares that instance except for its
+// trailing index, while two identical units differ in the parent hash, so the
+// instance minus its last token is the unit.
+static std::string deviceGroupKey(const std::string &devicePath, uint16_t vendorId, uint16_t productId) {
+    const std::string suffix = ":" + std::to_string(vendorId) + ":" + std::to_string(productId);
+
+    size_t instanceStart = devicePath.find('#');
+    if (instanceStart != std::string::npos) {
+        instanceStart = devicePath.find('#', instanceStart + 1);
+    }
+    if (instanceStart != std::string::npos) {
+        size_t instanceEnd = devicePath.find('#', instanceStart + 1);
+        std::string instance = devicePath.substr(instanceStart + 1, instanceEnd == std::string::npos ? std::string::npos : instanceEnd - instanceStart - 1);
+
+        size_t lastToken = instance.rfind('&');
+        if (lastToken != std::string::npos && lastToken > 0) {
+            instance.resize(lastToken);
+            for (char &c : instance) {
+                c = (char) tolower((unsigned char) c);
+            }
+            return "instance:" + instance + suffix;
+        }
+    }
+
+    Logger::getInstance()->debug("Unrecognized device path %s, grouping by product ID instead\n", devicePath.c_str());
+    return kProductWideKeyPrefix + suffix;
+}
+
+// A product-wide key matches every key of the same product: with no usable
+// path the interfaces cannot be told apart, so they must collapse into one
+// object rather than risk two objects driving the same hardware.
+static bool groupKeysMatch(const std::string &a, const std::string &b) {
+    if (a == b) {
+        return true;
+    }
+
+    // Keys end in ":vendorId:productId"; what precedes it is the discriminator.
+    auto vidPidSuffix = [](const std::string &key) {
+        size_t product = key.rfind(':');
+        if (product == std::string::npos || product == 0) {
+            return std::string();
+        }
+
+        size_t vendor = key.rfind(':', product - 1);
+        return vendor == std::string::npos ? std::string() : key.substr(vendor);
+    };
+
+    bool eitherIsProductWide = a.rfind(kProductWideKeyPrefix, 0) == 0 || b.rfind(kProductWideKeyPrefix, 0) == 0;
+    return eitherIsProductWide && vidPidSuffix(a) == vidPidSuffix(b);
+}
 
 USBController::USBController() {
     enumerateDevices();
@@ -67,10 +129,11 @@ void USBController::destroy() {
 
     std::lock_guard<std::mutex> lock(devicesMutex);
     for (auto ptr : devices) {
-        devicePaths.erase(ptr);
         delete ptr;
     }
     devices.clear();
+    devicePaths.clear();
+    deviceGroupKeys.clear();
     pendingDevices.clear();
 
     instance = nullptr;
@@ -79,7 +142,12 @@ void USBController::destroy() {
 void USBController::forgetDevice(USBDevice *device) {
     // Caller holds devicesMutex.
     devicePaths.erase(device);
-    pendingDevices.erase(std::make_pair(device->vendorId, device->productId));
+
+    auto keyIt = deviceGroupKeys.find(device);
+    if (keyIt != deviceGroupKeys.end()) {
+        pendingDevices.erase(keyIt->second);
+        deviceGroupKeys.erase(keyIt);
+    }
 }
 
 USBDevice *USBController::createDeviceFromHandle(HANDLE hidDevice, const std::string &devicePath) {
@@ -123,32 +191,24 @@ bool USBController::deviceExistsWithPath(const std::string &devicePath) {
     return false;
 }
 
-bool USBController::deviceExistsWithVidPid(uint16_t vendorId, uint16_t productId) {
+bool USBController::deviceExistsWithGroupKey(const std::string &groupKey) {
     std::lock_guard<std::mutex> lock(devicesMutex);
-    for (auto *dev : devices) {
-        if (dev->vendorId == vendorId && dev->productId == productId) {
+    for (const auto &pair : deviceGroupKeys) {
+        if (groupKeysMatch(pair.second, groupKey)) {
             return true;
         }
     }
 
-    if (pendingDevices.find(std::make_pair(vendorId, productId)) != pendingDevices.end()) {
-        return true;
+    for (const auto &pending : pendingDevices) {
+        if (groupKeysMatch(pending, groupKey)) {
+            return true;
+        }
     }
 
     return false;
 }
 
-bool USBController::deviceExistsWithHandle(HANDLE hidDevice) {
-    std::lock_guard<std::mutex> lock(devicesMutex);
-    for (auto *dev : devices) {
-        if (dev->hidDevice == hidDevice) {
-            return true;
-        }
-    }
-    return false;
-}
-
-void USBController::addDeviceFromHandle(HANDLE hidDevice, const std::string &devicePath) {
+void USBController::addDeviceFromHandle(HANDLE hidDevice, const std::string &devicePath, const std::string &groupKey) {
     if (hidDevice == INVALID_HANDLE_VALUE) {
         return;
     }
@@ -158,29 +218,24 @@ void USBController::addDeviceFromHandle(HANDLE hidDevice, const std::string &dev
         return;
     }
 
-    // Get vendor/product ID to track completion
-    HIDD_ATTRIBUTES attributes = {};
-    attributes.Size = sizeof(attributes);
-    if (!HidD_GetAttributes(hidDevice, &attributes)) {
-        CloseHandle(hidDevice);
-        return;
-    }
-
-    uint16_t vendorId = attributes.VendorID;
-    uint16_t productId = attributes.ProductID;
-
-    AppState::getInstance()->executeAfter(0, this, [this, hidDevice, devicePath, vendorId, productId]() {
+    AppState::getInstance()->executeAfter(0, this, [this, hidDevice, devicePath, groupKey]() {
         std::lock_guard<std::mutex> lock(devicesMutex);
         USBDevice *device = createDeviceFromHandle(hidDevice, devicePath);
         if (device) {
             devices.push_back(device);
+            deviceGroupKeys[device] = groupKey;
+
+            // Two units of the same product must show different group keys here.
+            Logger::getInstance()->info("Registered %s (vendorId: 0x%04X, productId: 0x%04X, handler: %s), device group %s\n", device->productName.c_str(), device->vendorId, device->productId, device->classIdentifier(), groupKey.c_str());
         }
 
-        pendingDevices.erase(std::make_pair(vendorId, productId));
+        pendingDevices.erase(groupKey);
     });
 }
 
-void USBController::enumerateHidDevices(std::function<void(HANDLE, const std::string &)> deviceHandler) {
+// Calls deviceHandler for every present WINCTRL HID interface with its group
+// key; other vendors are filtered out here. The handler owns the handle.
+void USBController::enumerateHidDevices(std::function<void(HANDLE, const std::string &, const std::string &)> deviceHandler) {
     if (!AppState::getInstance()->pluginInitialized) {
         return;
     }
@@ -203,7 +258,14 @@ void USBController::enumerateHidDevices(std::function<void(HANDLE, const std::st
         if (SetupDiGetDeviceInterfaceDetail(deviceInfoSet, &deviceInterfaceData, deviceDetail, requiredSize, nullptr, nullptr)) {
             HANDLE hidDevice = CreateFile(deviceDetail->DevicePath, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_EXISTING, 0, nullptr);
             if (hidDevice != INVALID_HANDLE_VALUE) {
-                deviceHandler(hidDevice, std::string(deviceDetail->DevicePath));
+                HIDD_ATTRIBUTES attributes = {};
+                attributes.Size = sizeof(attributes);
+                std::string devicePath = std::string(deviceDetail->DevicePath);
+                if (HidD_GetAttributes(hidDevice, &attributes) && attributes.VendorID == WINCTRL_VENDOR_ID) {
+                    deviceHandler(hidDevice, devicePath, deviceGroupKey(devicePath, attributes.VendorID, attributes.ProductID));
+                } else {
+                    CloseHandle(hidDevice);
+                }
             }
         }
         free(deviceDetail);
@@ -212,47 +274,36 @@ void USBController::enumerateHidDevices(std::function<void(HANDLE, const std::st
 }
 
 void USBController::enumerateDevices() {
-    enumerateHidDevices([this](HANDLE hidDevice, const std::string &devicePath) {
-        HIDD_ATTRIBUTES attributes = {};
-        attributes.Size = sizeof(attributes);
-        if (HidD_GetAttributes(hidDevice, &attributes) && attributes.VendorID == WINCTRL_VENDOR_ID) {
-            if (deviceExistsWithVidPid(attributes.VendorID, attributes.ProductID)) {
-                CloseHandle(hidDevice);
-                return;
-            }
-
-            {
-                std::lock_guard<std::mutex> lock(devicesMutex);
-                pendingDevices.insert(std::make_pair(attributes.VendorID, attributes.ProductID));
-            }
-            addDeviceFromHandle(hidDevice, devicePath);
-        } else {
+    enumerateHidDevices([this](HANDLE hidDevice, const std::string &devicePath, const std::string &groupKey) {
+        if (deviceExistsWithGroupKey(groupKey)) {
             CloseHandle(hidDevice);
+            return;
         }
+
+        {
+            std::lock_guard<std::mutex> lock(devicesMutex);
+            pendingDevices.insert(groupKey);
+        }
+        addDeviceFromHandle(hidDevice, devicePath, groupKey);
     });
 }
 
 void USBController::checkForDeviceChanges() {
     std::vector<std::string> currentDevicePaths;
 
-    enumerateHidDevices([this, &currentDevicePaths](HANDLE hidDevice, const std::string &devicePath) {
-        HIDD_ATTRIBUTES attributes = {};
-        attributes.Size = sizeof(attributes);
-        if (HidD_GetAttributes(hidDevice, &attributes) && attributes.VendorID == WINCTRL_VENDOR_ID) {
-            currentDevicePaths.push_back(devicePath);
+    enumerateHidDevices([this, &currentDevicePaths](HANDLE hidDevice, const std::string &devicePath, const std::string &groupKey) {
+        currentDevicePaths.push_back(devicePath);
 
-            if (!deviceExistsWithVidPid(attributes.VendorID, attributes.ProductID)) {
-                {
-                    std::lock_guard<std::mutex> lock(devicesMutex);
-                    pendingDevices.insert(std::make_pair(attributes.VendorID, attributes.ProductID));
-                }
-                addDeviceFromHandle(hidDevice, devicePath);
-            } else {
-                CloseHandle(hidDevice);
-            }
-        } else {
+        if (deviceExistsWithGroupKey(groupKey)) {
             CloseHandle(hidDevice);
+            return;
         }
+
+        {
+            std::lock_guard<std::mutex> lock(devicesMutex);
+            pendingDevices.insert(groupKey);
+        }
+        addDeviceFromHandle(hidDevice, devicePath, groupKey);
     });
 
     // Disconnect and erase stale devices on the flight loop. Disconnecting
@@ -272,9 +323,8 @@ void USBController::checkForDeviceChanges() {
             if (!found || dev->hidDevice == INVALID_HANDLE_VALUE || !dev->connected) {
                 dev->blackout();
                 dev->disconnect();
-                if (pathIt != devicePaths.end()) {
-                    devicePaths.erase(pathIt);
-                }
+                // Also drops the group key, or this device could never be re-added.
+                forgetDevice(dev);
                 delete dev;
                 it = devices.erase(it);
             } else {
