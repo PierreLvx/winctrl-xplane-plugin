@@ -1,12 +1,11 @@
 #include "q4xp-fmc-profile.h"
 
-#include "config.h"
 #include "dataref.h"
 #include "product-fmc.h"
+#include "uns1-decode.h"
 
 #include <algorithm>
 #include <cmath>
-#include <cstring>
 #include <sstream>
 
 Q4XPFMCProfile::Q4XPFMCProfile(ProductFMC *product) : FMCAircraftProfile(product) {
@@ -91,6 +90,7 @@ const std::vector<FMCButtonDef> &Q4XPFMCProfile::buttonDefs() const {
             {std::vector<FMCKey>{FMCKey::MCDU_INIT, FMCKey::PFP4_VNAV, FMCKey::PFP7_VNAV}, "FJS/Q4XP/" + fms + "/vnav", FMCDatarefType::EXECUTE_CMD_ONCE},
             {std::vector<FMCKey>{FMCKey::MCDU_AIRPORT, FMCKey::PFP_DEP_ARR}, "FJS/Q4XP/" + fms + "/list", FMCDatarefType::EXECUTE_CMD_ONCE},
             {FMCKey::MENU, "FJS/Q4XP/" + fms + "/menu", FMCDatarefType::EXECUTE_CMD_ONCE},
+            {FMCKey::PROG, "FJS/Q4XP/" + fms + "/msg", FMCDatarefType::EXECUTE_CMD_ONCE},
             {FMCKey::PFP_EXEC, "FJS/Q4XP/" + fms + "/key_enter", FMCDatarefType::EXECUTE_CMD_ONCE},
             {FMCKey::MCDU_OVERFLY, "FJS/Q4XP/" + fms + "/key_enter", FMCDatarefType::EXECUTE_CMD_ONCE},
             {FMCKey::MCDU_EMPTY_TOP_RIGHT, "FJS/Q4XP/" + fms + "/pwr", FMCDatarefType::EXECUTE_CMD_ONCE},
@@ -131,23 +131,19 @@ const std::vector<FMCButtonDef> &Q4XPFMCProfile::buttonDefs() const {
             {FMCKey::KEYX, "FJS/Q4XP/" + fms + "/key_X", FMCDatarefType::EXECUTE_CMD_ONCE},
             {FMCKey::KEYY, "FJS/Q4XP/" + fms + "/key_Y", FMCDatarefType::EXECUTE_CMD_ONCE},
             {FMCKey::KEYZ, "FJS/Q4XP/" + fms + "/key_Z", FMCDatarefType::EXECUTE_CMD_ONCE},
-            {FMCKey::PLUSMINUS, "FJS/Q4XP/" + fms + "/plusminus", FMCDatarefType::EXECUTE_CMD_ONCE},
+            {FMCKey::PLUSMINUS, "FJS/Q4XP/" + fms + "/plus_minus", FMCDatarefType::EXECUTE_CMD_ONCE},
 
-            // Arrows: UP=prev, DOWN=next, LEFT=back
-            {FMCKey::MCDU_PAGE_UP, "FJS/Q4XP/" + fms + "/prev", FMCDatarefType::EXECUTE_CMD_ONCE},
-            {FMCKey::MCDU_PAGE_DOWN, "FJS/Q4XP/" + fms + "/next", FMCDatarefType::EXECUTE_CMD_ONCE},
-            {FMCKey::PAGE_PREV, "FJS/Q4XP/" + fms + "/back", FMCDatarefType::EXECUTE_CMD_ONCE},
+            {std::vector<FMCKey>{FMCKey::MCDU_PAGE_UP, FMCKey::PAGE_PREV}, "FJS/Q4XP/" + fms + "/prev", FMCDatarefType::EXECUTE_CMD_ONCE},
+            {std::vector<FMCKey>{FMCKey::MCDU_PAGE_DOWN, FMCKey::PAGE_NEXT}, "FJS/Q4XP/" + fms + "/next", FMCDatarefType::EXECUTE_CMD_ONCE},
 
             // Remaining keys — no UNS-1 equivalent
             {FMCKey::BRIGHTNESS_UP, ""},
             {FMCKey::BRIGHTNESS_DOWN, ""},
-            {FMCKey::PAGE_NEXT, ""},
             {FMCKey::MCDU_EMPTY_BOTTOM_LEFT, ""},
             {FMCKey::MCDU_SEC_FPLN, ""},
             {FMCKey::SLASH, ""},
             {FMCKey::PERIOD, ""},
             {FMCKey::SPACE, ""},
-            {FMCKey::PROG, ""},
             {FMCKey::PFP_HOLD, ""},
             {FMCKey::PFP_FIX, ""},
             {FMCKey::PFP3_CLB, ""},
@@ -189,151 +185,16 @@ const std::unordered_map<FMCKey, const FMCButtonDef *> &Q4XPFMCProfile::buttonKe
 }
 
 const std::map<char, FMCTextColor> &Q4XPFMCProfile::colorMap() const {
-    static const std::map<char, FMCTextColor> colMap = {
-        {0x00, FMCTextColor::COLOR_WHITE},
-        {0x01, FMCTextColor::COLOR_WHITE},
-        {0x02, FMCTextColor::COLOR_GREEN},
-        {0x03, FMCTextColor::COLOR_YELLOW},
-        {0x04, FMCTextColor::COLOR_GREEN},
-        {0x05, FMCTextColor::COLOR_MAGENTA},
-        {0x06, FMCTextColor::COLOR_GREEN},
-        {0x07, FMCTextColor::COLOR_CYAN},
-        {0x0B, FMCTextColor::COLOR_GREEN},
-        {0x40, FMCTextColor::withBackgroundColor(FMCTextColor::COLOR_BLACK, FMCTextColor::COLOR_WHITE)},  // inverted (ACCEPT)
-    };
-    return colMap;
+    return UNS1Decode::colorMap();
 }
 
 void Q4XPFMCProfile::mapCharacter(std::vector<uint8_t> *buffer, uint8_t character, bool isFontSmall) {
-    switch (character) {
-        case '#':
-            buffer->insert(buffer->end(), FMCSpecialCharacter::OUTLINED_SQUARE.begin(), FMCSpecialCharacter::OUTLINED_SQUARE.end());
-            break;
-
-        case '<':
-            buffer->insert(buffer->end(), FMCSpecialCharacter::ARROW_LEFT.begin(), FMCSpecialCharacter::ARROW_LEFT.end());
-            break;
-
-        case '>':
-            buffer->insert(buffer->end(), FMCSpecialCharacter::ARROW_RIGHT.begin(), FMCSpecialCharacter::ARROW_RIGHT.end());
-            break;
-
-        case 30:
-            buffer->insert(buffer->end(), FMCSpecialCharacter::ARROW_UP.begin(), FMCSpecialCharacter::ARROW_UP.end());
-            break;
-
-        case 31:
-            buffer->insert(buffer->end(), FMCSpecialCharacter::ARROW_DOWN.begin(), FMCSpecialCharacter::ARROW_DOWN.end());
-            break;
-
-        case '`':
-            buffer->insert(buffer->end(), FMCSpecialCharacter::DEGREES.begin(), FMCSpecialCharacter::DEGREES.end());
-            break;
-
-        case '^':
-            buffer->insert(buffer->end(), FMCSpecialCharacter::TRIANGLE.begin(), FMCSpecialCharacter::TRIANGLE.end());
-            break;
-
-        default:
-            buffer->push_back(character);
-            break;
-    }
+    UNS1Decode::mapCharacter(buffer, character);
 }
 
 void Q4XPFMCProfile::updatePage(std::vector<std::vector<char>> &page) {
-    page = std::vector<std::vector<char>>(ProductFMC::PageLines, std::vector<char>(ProductFMC::PageCharsPerLine * ProductFMC::PageBytesPerChar, ' '));
-
-    auto datarefManager = Dataref::getInstance();
     const std::string cdu = product->deviceVariant == FMCDeviceVariant::VARIANT_CAPTAIN ? "cdu1" : "cdu2";
-
-    // Replace unicode symbols with single-byte placeholders
-    const std::vector<std::pair<std::string, unsigned char>> symbols = {
-        {"\u2190", '<'},  {"\u2192", '>'},  {"\u2191", 30},  {"\u2193", 31},
-        {"\u2610", '#'},  {"\u00B0", '`'},  {"\u0394", '^'},
-        {"\u2194", '<'},  {"\u2196", '<'},  {"\u2197", '>'},  {"\u2198", '>'},  {"\u2199", '<'},
-        {"\u21E6", '<'},  {"\u21E8", '>'},  {"\u21E7", 30},  {"\u21E9", 31},
-        {"\u2500", '-'},  {"\u2502", '|'},  {"\u250C", '+'}, {"\u2510", '+'}, {"\u2514", '+'}, {"\u2518", '+'},
-        {"\u251C", '|'},  {"\u2524", '|'},  {"\u252C", '+'}, {"\u2534", '+'}, {"\u253C", '+'},
-        {"\u2550", '='},  {"\u2551", '|'},  {"\u2554", '+'}, {"\u2557", '+'}, {"\u255A", '+'}, {"\u255D", '+'},
-        {"\u2560", '+'},  {"\u2563", '+'},  {"\u2566", '+'}, {"\u2569", '+'}, {"\u256C", '+'},
-        {"\u256D", '|'},  {"\u256E", '|'},  {"\u256F", '|'},  {"\u2570", '|'},
-        {"\u23A1", '+'},  {"\u23A4", '+'},  {"\u23A7", '{'},  {"\u23AB", '}'},
-        {"\u27E6", '['},  {"\u27E7", ']'},
-    };
-
-    static constexpr int ScreenLines = 11;
-
-    for (int lineNum = 0; lineNum < ScreenLines; ++lineNum) {
-        std::string textDataref = "FJS/Q4XP/" + cdu + "/text_line_" + std::to_string(lineNum);
-        std::string styleDataref = "FJS/Q4XP/" + cdu + "/style_line_" + std::to_string(lineNum);
-
-        std::string text = datarefManager->getCached<std::string>(textDataref.c_str());
-        if (text.empty()) {
-            continue;
-        }
-
-        std::vector<unsigned char> styleBytes = datarefManager->getCached<std::vector<unsigned char>>(styleDataref.c_str());
-
-        for (const auto &symbol : symbols) {
-            size_t pos = 0;
-            while ((pos = text.find(symbol.first, pos)) != std::string::npos) {
-                text.replace(pos, symbol.first.length(), std::string(1, static_cast<char>(symbol.second)));
-                pos += 1;
-            }
-        }
-
-        // Map remaining high-byte characters to ASCII equivalents
-        for (size_t i = 0; i < text.size(); ++i) {
-            unsigned char c = static_cast<unsigned char>(text[i]);
-            if (c <= 127) { continue; }
-            switch (c) {
-                case 0xB0: case 0xB1: case 0xB2: text[i] = ' '; break;
-                case 0xB3: case 0xDD: case 0xDE: text[i] = '|'; break;
-                case 0xC4: case 0xDC: case 0xDF: text[i] = '-'; break;
-                case 0xBA:                     text[i] = '|'; break;
-                case 0xCD:                     text[i] = '='; break;
-                case 0xBF: case 0xC0: case 0xD9: case 0xDA:
-                case 0xB4: case 0xC3: case 0xC1: case 0xC2: case 0xC5:
-                case 0xB5: case 0xB6: case 0xB7: case 0xB8: case 0xB9:
-                case 0xBB: case 0xBC: case 0xBD: case 0xBE:
-                case 0xC6: case 0xC7: case 0xC8: case 0xC9:
-                case 0xCA: case 0xCB: case 0xCC: case 0xCE: case 0xCF:
-                case 0xD0: case 0xD1: case 0xD2: case 0xD3: case 0xD4:
-                case 0xD5: case 0xD6: case 0xD7: case 0xD8:
-                    text[i] = '+'; break;
-                case 0xDB: text[i] = '#'; break;
-                default:   text[i] = ' '; break;
-            }
-        }
-
-        int displayLine = lineNum;
-        if (displayLine >= ProductFMC::PageLines) {
-            break;
-        }
-
-        for (int i = 0; i < text.size() && i < ProductFMC::PageCharsPerLine; ++i) {
-            char c = text[i];
-            if (c == 0x00) {
-                continue;
-            }
-
-            bool fontSmall = false;
-            unsigned char styleByte = (i < styleBytes.size()) ? styleBytes[i] : 0x00;
-            fontSmall = (styleByte & 0xF0) == 0x00;
-
-            bool isInverted = (styleByte & 0x40);
-            if (c == ' ' && !isInverted) {
-                continue;
-            }
-
-            unsigned char colorIdx = styleByte & 0x0F;
-            if (styleByte & 0x40) {
-                colorIdx = 0x40;  // inverted/reverse video
-            }
-
-            product->writeLineToPage(page, displayLine, i, std::string(1, c), colorIdx, fontSmall);
-        }
-    }
+    UNS1Decode::updatePage(product, page, "FJS/Q4XP/" + cdu, 11);
 }
 
 void Q4XPFMCProfile::buttonPressed(const FMCButtonDef *button, XPLMCommandPhase phase) {
