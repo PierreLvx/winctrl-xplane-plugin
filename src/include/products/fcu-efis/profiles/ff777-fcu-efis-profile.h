@@ -10,8 +10,13 @@
 class FF777FCUEfisProfile : public FCUEfisAircraftProfile {
     private:
         bool isTestMode();
-        bool isStdCaptain;
-        bool isStdFirstOfficer;
+        bool isStdCaptain = false;
+        bool isStdFirstOfficer = false;
+
+        // The STD button /anim is a damped spring (overshoots 1.0, undershoots 0)
+        // stepping every ~80-140ms. Latch the down-edge so one press = one toggle.
+        bool stdButtonDownCaptain = false;
+        bool stdButtonDownFirstOfficer = false;
 
     public:
         FF777FCUEfisProfile(ProductFCUEfis *product);

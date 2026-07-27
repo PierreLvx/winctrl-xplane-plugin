@@ -1,6 +1,5 @@
 #include "ff777-fcu-efis-profile.h"
 
-#include "appstate.h"
 #include "dataref.h"
 #include "product-fcu-efis.h"
 
@@ -10,6 +9,9 @@
 #include <cstring>
 #include <iomanip>
 #include <XPLMUtilities.h>
+
+// STD is 29.92 inHg; the nearest manual step is 0.01 away, so stay well under that.
+static constexpr float kStdBaroTolerance = 0.005f;
 
 FF777FCUEfisProfile::FF777FCUEfisProfile(ProductFCUEfis *product) : FCUEfisAircraftProfile(product) {
     Dataref::getInstance()->monitorExistingDataref<float>("1-sim/ckpt/lights/glareshield", [product](float brightness) {
@@ -125,32 +127,56 @@ FF777FCUEfisProfile::FF777FCUEfisProfile(ProductFCUEfis *product) : FCUEfisAircr
         this);
 
     Dataref::getInstance()->monitorExistingDataref<float>("1-sim/ckpt/cptHsiStdButton/anim", [this, product](float animValue) {
-        AppState::getInstance()->executeAfterDebounced("cptStdChanged", 50, this, [this, product]() {
-            isStdCaptain = !isStdCaptain;
+        bool isDown = animValue > 0.5f;
+        if (isDown == stdButtonDownCaptain) {
+            return;
+        }
 
-            float baroValue = Dataref::getInstance()->get<float>("sim/cockpit2/gauges/actuators/barometer_setting_in_hg_pilot");
-            if (isStdCaptain && fabs(baroValue - 29.92f) > std::numeric_limits<float>::epsilon()) {
-                isStdCaptain = false;
-            }
+        stdButtonDownCaptain = isDown;
+        if (!isDown) {
+            return;
+        }
 
-            product->updateDisplays();
-        });
+        isStdCaptain = !isStdCaptain;
+
+        float baroValue = Dataref::getInstance()->get<float>("sim/cockpit2/gauges/actuators/barometer_setting_in_hg_pilot");
+        if (isStdCaptain && fabs(baroValue - 29.92f) > kStdBaroTolerance) {
+            isStdCaptain = false;
+        }
+
+        product->updateDisplays();
     },
         this);
 
     Dataref::getInstance()->monitorExistingDataref<float>("1-sim/ckpt/foHsiStdButton/anim", [this, product](float animValue) {
-        AppState::getInstance()->executeAfterDebounced("foStdChanged", 50, this, [this, product]() {
-            isStdFirstOfficer = !isStdFirstOfficer;
+        bool isDown = animValue > 0.5f;
+        if (isDown == stdButtonDownFirstOfficer) {
+            return;
+        }
 
-            float baroValue = Dataref::getInstance()->get<float>("sim/cockpit2/gauges/actuators/barometer_setting_in_hg_copilot");
-            if (isStdFirstOfficer && fabs(baroValue - 29.92f) > std::numeric_limits<float>::epsilon()) {
-                isStdFirstOfficer = false;
-            }
+        stdButtonDownFirstOfficer = isDown;
+        if (!isDown) {
+            return;
+        }
 
-            product->updateDisplays();
-        });
+        isStdFirstOfficer = !isStdFirstOfficer;
+
+        float baroValue = Dataref::getInstance()->get<float>("sim/cockpit2/gauges/actuators/barometer_setting_in_hg_copilot");
+        if (isStdFirstOfficer && fabs(baroValue - 29.92f) > kStdBaroTolerance) {
+            isStdFirstOfficer = false;
+        }
+
+        product->updateDisplays();
     },
         this);
+
+    // Best-effort seed at load: STD parks the baro on exactly 29.92. A hand-set
+    // 29.92 QNH in inHg mode fools this, but it beats always starting on QNH.
+    float captainBaro = Dataref::getInstance()->get<float>("sim/cockpit2/gauges/actuators/barometer_setting_in_hg_pilot");
+    isStdCaptain = captainBaro > 0 && fabs(captainBaro - 29.92f) <= kStdBaroTolerance;
+
+    float foBaro = Dataref::getInstance()->get<float>("sim/cockpit2/gauges/actuators/barometer_setting_in_hg_copilot");
+    isStdFirstOfficer = foBaro > 0 && fabs(foBaro - 29.92f) <= kStdBaroTolerance;
 }
 
 bool FF777FCUEfisProfile::IsEligible() {
