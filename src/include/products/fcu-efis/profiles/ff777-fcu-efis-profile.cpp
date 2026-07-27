@@ -81,36 +81,6 @@ FF777FCUEfisProfile::FF777FCUEfisProfile(ProductFCUEfis *product) : FCUEfisAircr
     },
         this);
 
-    Dataref::getInstance()->monitorExistingDataref<bool>("1-sim/ckpt/lampsGlow/cptCAUTION", [this, product](bool isCaution) {
-        bool isWarning = Dataref::getInstance()->getCached<bool>("1-sim/ckpt/lampsGlow/cptWARNING");
-        product->setLedBrightness(FCUEfisLed::EFISL_CSTR_GREEN, isCaution || isWarning || isTestMode() ? 1 : 0);
-        product->setLedBrightness(FCUEfisLed::EFISL_WPT_GREEN, isCaution || isWarning || isTestMode() ? 1 : 0);
-        product->setLedBrightness(FCUEfisLed::EFISL_VORD_GREEN, isCaution || isWarning || isTestMode() ? 1 : 0);
-        product->setLedBrightness(FCUEfisLed::EFISL_NDB_GREEN, isCaution || isWarning || isTestMode() ? 1 : 0);
-        product->setLedBrightness(FCUEfisLed::EFISL_ARPT_GREEN, isCaution || isWarning || isTestMode() ? 1 : 0);
-    },
-        this);
-
-    Dataref::getInstance()->monitorExistingDataref<bool>("1-sim/ckpt/lampsGlow/foCAUTION", [this, product](bool isCaution) {
-        bool isWarning = Dataref::getInstance()->getCached<bool>("1-sim/ckpt/lampsGlow/foWARNING");
-        product->setLedBrightness(FCUEfisLed::EFISR_CSTR_GREEN, isCaution || isWarning || isTestMode() ? 1 : 0);
-        product->setLedBrightness(FCUEfisLed::EFISR_WPT_GREEN, isCaution || isWarning || isTestMode() ? 1 : 0);
-        product->setLedBrightness(FCUEfisLed::EFISR_VORD_GREEN, isCaution || isWarning || isTestMode() ? 1 : 0);
-        product->setLedBrightness(FCUEfisLed::EFISR_NDB_GREEN, isCaution || isWarning || isTestMode() ? 1 : 0);
-        product->setLedBrightness(FCUEfisLed::EFISR_ARPT_GREEN, isCaution || isWarning || isTestMode() ? 1 : 0);
-    },
-        this);
-
-    Dataref::getInstance()->monitorExistingDataref<bool>("1-sim/ckpt/lampsGlow/cptWARNING", [this, product](bool on) {
-        Dataref::getInstance()->executeChangedCallbacksForDataref("1-sim/ckpt/lampsGlow/cptCAUTION");
-    },
-        this);
-
-    Dataref::getInstance()->monitorExistingDataref<bool>("1-sim/ckpt/lampsGlow/foWARNING", [this, product](bool on) {
-        Dataref::getInstance()->executeChangedCallbacksForDataref("1-sim/ckpt/lampsGlow/foCAUTION");
-    },
-        this);
-
     Dataref::getInstance()->monitorExistingDataref<int>("1-sim/ckpt/indLightTestSwitch/anim", [this, product](int isTest) {
         Dataref::getInstance()->executeChangedCallbacksForDataref("1-sim/output/mcp/ok");
         Dataref::getInstance()->executeChangedCallbacksForDataref("1-sim/ckpt/lampsGlow/mcpCaptAP");
@@ -121,8 +91,6 @@ FF777FCUEfisProfile::FF777FCUEfisProfile(ProductFCUEfis *product) : FCUEfisAircr
         Dataref::getInstance()->executeChangedCallbacksForDataref("1-sim/ckpt/lampsGlow/mcpAT");
         Dataref::getInstance()->executeChangedCallbacksForDataref("1-sim/ckpt/mcpFdLSwitch/anim");
         Dataref::getInstance()->executeChangedCallbacksForDataref("1-sim/ckpt/mcpFdRSwitch/anim");
-        Dataref::getInstance()->executeChangedCallbacksForDataref("1-sim/ckpt/lampsGlow/cptWARNING");
-        Dataref::getInstance()->executeChangedCallbacksForDataref("1-sim/ckpt/lampsGlow/foWARNING");
     },
         this);
 
