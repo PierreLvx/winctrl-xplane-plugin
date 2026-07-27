@@ -161,19 +161,24 @@ USBDevice *USBController::createDeviceFromHandle(HANDLE hidDevice, const std::st
 
     wchar_t vendorName[256] = {};
     wchar_t productName[256] = {};
+    wchar_t serialNumber[256] = {};
     HidD_GetManufacturerString(hidDevice, vendorName, sizeof(vendorName));
     HidD_GetProductString(hidDevice, productName, sizeof(productName));
+    HidD_GetSerialNumberString(hidDevice, serialNumber, sizeof(serialNumber));
 
     char vendorNameA[256] = {};
     char productNameA[256] = {};
+    char serialNumberA[256] = {};
     WideCharToMultiByte(CP_UTF8, 0, vendorName, -1, vendorNameA, sizeof(vendorNameA), nullptr, nullptr);
     WideCharToMultiByte(CP_UTF8, 0, productName, -1, productNameA, sizeof(productNameA), nullptr, nullptr);
+    WideCharToMultiByte(CP_UTF8, 0, serialNumber, -1, serialNumberA, sizeof(serialNumberA), nullptr, nullptr);
 
     USBDevice::pendingDevicePath = devicePath;
     USBDevice *device = USBDevice::Device(hidDevice, attributes.VendorID, attributes.ProductID, std::string(vendorNameA), std::string(productNameA));
     USBDevice::pendingDevicePath.clear();
 
     if (device) {
+        device->serialNumber = std::string(serialNumberA);
         devicePaths[device] = devicePath;
     } else {
         CloseHandle(hidDevice);

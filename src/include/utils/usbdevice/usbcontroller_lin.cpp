@@ -85,6 +85,36 @@ void USBController::forgetDevice(USBDevice *device) {
     (void) device;
 }
 
+// Serial of the USB device owning this hidraw node, empty when unavailable.
+static std::string readSerialNumber(struct udev *udev, const std::string &devicePath) {
+    if (!udev) {
+        return "";
+    }
+
+    struct stat deviceStat;
+    if (stat(devicePath.c_str(), &deviceStat) < 0 || !S_ISCHR(deviceStat.st_mode)) {
+        return "";
+    }
+
+    struct udev_device *hidrawDevice = udev_device_new_from_devnum(udev, 'c', deviceStat.st_rdev);
+    if (!hidrawDevice) {
+        return "";
+    }
+
+    std::string serialNumber;
+    // Parent is owned by the child, so it must not be unreffed separately.
+    struct udev_device *usbDevice = udev_device_get_parent_with_subsystem_devtype(hidrawDevice, "usb", "usb_device");
+    if (usbDevice) {
+        const char *serial = udev_device_get_sysattr_value(usbDevice, "serial");
+        if (serial) {
+            serialNumber = serial;
+        }
+    }
+
+    udev_device_unref(hidrawDevice);
+    return serialNumber;
+}
+
 USBDevice *USBController::createDeviceFromPath(const std::string &devicePath) {
     int fd = open(devicePath.c_str(), O_RDWR);
     if (fd < 0) {
@@ -108,7 +138,10 @@ USBDevice *USBController::createDeviceFromPath(const std::string &devicePath) {
         // Unimplemented product ID: nobody owns the fd, close it or it leaks
         // once per udev add event and enumeration pass.
         close(fd);
+        return nullptr;
     }
+
+    device->serialNumber = readSerialNumber(hidManager ? udev_monitor_get_udev(hidManager) : nullptr, devicePath);
     return device;
 }
 

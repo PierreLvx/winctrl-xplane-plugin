@@ -199,9 +199,9 @@ void USBDevice::didReceiveButton(uint16_t hardwareButtonIndex, bool pressed, uin
 }
 
 bool USBDevice::isButtonHandledByXPlane(uint16_t hardwareButtonIndex) {
-    bool handled = XPlaneBindings::getInstance()->isButtonBound(vendorId, productId, hardwareButtonIndex);
+    bool handled = XPlaneBindings::getInstance()->isButtonBound(vendorId, productId, serialNumber, hardwareButtonIndex);
     if (handled) {
-        Logger::getInstance()->debug("Button %u on %s (0x%04X:0x%04X) is overridden in X-Plane joystick settings; suppressing plugin action\n", hardwareButtonIndex, productName.c_str(), vendorId, productId);
+        Logger::getInstance()->debug("Button %u on %s (0x%04X:0x%04X, serial %s) is overridden in X-Plane joystick settings; suppressing plugin action\n", hardwareButtonIndex, productName.c_str(), vendorId, productId, serialNumber.empty() ? "unknown" : serialNumber.c_str());
     }
     return handled;
 }
