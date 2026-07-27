@@ -23,6 +23,7 @@ DEVICE_NAMES="
 0|agp|32 AGP Metal
 0|tcas|32 TCAS
 0|rmp|32 RMP
+0|nws|32 NWS
 0|ursa-minor-throttle|URSA MINOR 32 Throttle Metal (+ optional 32 PAC Metal)
 1|orion-throttle|ORION Throttle Base II
 "
@@ -51,6 +52,12 @@ jar330|JarDesign A330
 stratosphere77w|Stratosphere Studios 777-300ER
 kingair350|Airfoillabs King Air 350
 a220|Deanarica A220-300
+bae146|JustFlight 146
+pa28|JustFlight PA-28
+q4xp|FlyJSim Q4XP
+fjs732|FlyJSim 732 TwinJet
+c525|TorqueSim Citation CJ525
+cl650|Hot Start CL650
 "
 
 # Function to get display name
