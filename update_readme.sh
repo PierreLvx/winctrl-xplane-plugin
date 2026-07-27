@@ -50,6 +50,7 @@ sparky744|Sparky 744
 jar330|JarDesign A330
 stratosphere77w|Stratosphere Studios 777-300ER
 kingair350|Airfoillabs King Air 350
+a220|Deanarica A220-300
 "
 
 # Function to get display name

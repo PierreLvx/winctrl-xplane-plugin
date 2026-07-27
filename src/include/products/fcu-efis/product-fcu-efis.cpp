@@ -4,6 +4,7 @@
 #include "config.h"
 #include "dataref.h"
 #include "plugins-menu.h"
+#include "profiles/a220-fcu-efis-profile.h"
 #include "profiles/c172-afl-fcu-efis-profile.h"
 #include "profiles/c172-laminar-fcu-efis-profile.h"
 #include "profiles/cis-seneca-fcu-efis-profile.h"
@@ -125,6 +126,9 @@ void ProductFCUEfis::setProfileForCurrentAircraft() {
         profileReady = true;
     } else if (Laminar737FCUEfisProfile::IsEligible()) {
         profile = new Laminar737FCUEfisProfile(this);
+        profileReady = true;
+    } else if (A220FCUEfisProfile::IsEligible()) {
+        profile = new A220FCUEfisProfile(this);
         profileReady = true;
     } else {
         profile = nullptr;
