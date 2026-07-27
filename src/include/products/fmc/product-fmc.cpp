@@ -6,9 +6,11 @@
 #include "plugins-menu.h"
 #include "profiles/a220-fmc-profile.h"
 #include "profiles/bae146-fmc-profile.h"
+#include "profiles/c525-fmc-profile.h"
 #include "profiles/ff350-fmc-profile.h"
 #include "profiles/ff767-fmc-profile.h"
 #include "profiles/ff777-fmc-profile.h"
+#include "profiles/fjs732-fmc-profile.h"
 #include "profiles/fps748-fmc-profile.h"
 #include "profiles/ixeg733-fmc-profile.h"
 #include "profiles/jar330-fmc-profile.h"
@@ -91,6 +93,14 @@ void ProductFMC::setProfileForCurrentAircraft() {
     } else if (Q4XPFMCProfile::IsEligible()) {
         clearDisplay();
         profile = new Q4XPFMCProfile(this);
+        profileReady = true;
+    } else if (C525FMCProfile::IsEligible()) {
+        clearDisplay();
+        profile = new C525FMCProfile(this);
+        profileReady = true;
+    } else if (FJS732FMCProfile::IsEligible()) {
+        clearDisplay();
+        profile = new FJS732FMCProfile(this);
         profileReady = true;
     } else if (LaminarA333FMCProfile::IsEligible()) {
         clearDisplay();
