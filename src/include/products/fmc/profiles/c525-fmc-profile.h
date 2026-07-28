@@ -4,10 +4,11 @@
 #include "fmc-aircraft-profile.h"
 
 // TorqueSim Citation CJ (C525): a single-pilot aircraft with one CDU/FMS on the
-// stock Universal Avionics UNS-1 "uns1/cdu1" / "uns1/fms1" dataref namespace. The
-// UNS-1 screen decoding (symbol tables, page decode, glyph and colour mapping) is
-// shared via UNS1Decode; the button map, eligibility and backlight wiring are
-// specific to this airframe.
+// Universal Avionics UNS-1 "uns1/cdu1" / "uns1/fms1" dataref namespace. The UNS-1
+// screen decoding (symbol tables, page decode, glyph mapping) is shared via
+// UNS1Decode, but the style-byte colour table is this aircraft's own (its
+// nibble->colour encoding differs from the FJS732 and Q4XP). The button map,
+// eligibility and backlight wiring are specific to this airframe.
 class C525FMCProfile : public FMCAircraftProfile {
     public:
         C525FMCProfile(ProductFMC *product);

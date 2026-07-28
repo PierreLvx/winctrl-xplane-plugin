@@ -185,7 +185,19 @@ const std::unordered_map<FMCKey, const FMCButtonDef *> &Q4XPFMCProfile::buttonKe
 }
 
 const std::map<char, FMCTextColor> &Q4XPFMCProfile::colorMap() const {
-    return UNS1Decode::colorMap();
+    static const std::map<char, FMCTextColor> colMap = {
+        {0x00, FMCTextColor::COLOR_WHITE},
+        {0x01, FMCTextColor::COLOR_WHITE},
+        {0x02, FMCTextColor::COLOR_GREEN},
+        {0x03, FMCTextColor::COLOR_YELLOW},
+        {0x04, FMCTextColor::COLOR_GREEN},
+        {0x05, FMCTextColor::COLOR_MAGENTA},
+        {0x06, FMCTextColor::COLOR_GREEN},
+        {0x07, FMCTextColor::COLOR_CYAN},
+        {0x0B, FMCTextColor::COLOR_GREEN},
+        {0x40, FMCTextColor::withBackgroundColor(FMCTextColor::COLOR_BLACK, FMCTextColor::COLOR_WHITE)},
+    };
+    return colMap;
 }
 
 void Q4XPFMCProfile::mapCharacter(std::vector<uint8_t> *buffer, uint8_t character, bool isFontSmall) {
