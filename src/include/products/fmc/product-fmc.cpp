@@ -9,6 +9,7 @@
 #include "profiles/ff350-fmc-profile.h"
 #include "profiles/ff767-fmc-profile.h"
 #include "profiles/ff777-fmc-profile.h"
+#include "profiles/felis742-ltn-fmc-profile.h"
 #include "profiles/fjs732-fmc-profile.h"
 #include "profiles/fps748-fmc-profile.h"
 #include "profiles/ixeg733-fmc-profile.h"
@@ -156,6 +157,10 @@ void ProductFMC::setProfileForCurrentAircraft() {
     } else if (PA28FMCProfile::IsEligible()) {
         clearDisplay();
         profile = new PA28FMCProfile(this);
+        profileReady = true;
+    } else if (Felis742LTNFMCProfile::IsEligible()) {
+        clearDisplay();
+        profile = new Felis742LTNFMCProfile(this);
         profileReady = true;
     } else {
         profile = nullptr;
