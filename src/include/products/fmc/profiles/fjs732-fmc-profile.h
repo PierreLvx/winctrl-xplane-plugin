@@ -3,11 +3,12 @@
 
 #include "fmc-aircraft-profile.h"
 
-// FlyJSim 737-200: a single CDU/FMS (no captain/FO split) on the stock Universal
+// FlyJSim 737-200: a single CDU/FMS (no captain/FO split) on the Universal
 // Avionics UNS-1 "uns1/cdu1" / "uns1/fms1" dataref namespace. The UNS-1 screen
-// decoding (symbol tables, page decode, glyph and colour mapping) is shared via
-// UNS1Decode; the button map, eligibility and backlight wiring are specific to
-// this airframe.
+// decoding (symbol tables, page decode, glyph mapping) is shared via UNS1Decode,
+// but the style-byte colour table is this aircraft's own (its nibble->colour
+// encoding differs from the CJ525 and Q4XP). The button map, eligibility and
+// backlight wiring are specific to this airframe.
 class FJS732FMCProfile : public FMCAircraftProfile {
     public:
         FJS732FMCProfile(ProductFMC *product);
