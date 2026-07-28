@@ -21,14 +21,7 @@ Q4XPFMCProfile::Q4XPFMCProfile(ProductFMC *product) : FMCAircraftProfile(product
     },
         this);
 
-    auto font = Font::GlyphData("Q4XP.xpwwf", product->identifierByte, product->hardwareType);
-    if (!font.empty()) {
-        for (auto &packet : font) {
-            product->writeData(packet);
-        }
-    } else {
-        product->setFont(FontVariant::Default);
-    }
+    product->setFont(FontVariant::Default);
 }
 
 Q4XPFMCProfile::~Q4XPFMCProfile() {

@@ -13,14 +13,7 @@
 CL650FMCProfile::CL650FMCProfile(ProductFMC *product) : FMCAircraftProfile(product) {
     product->setAllLedsEnabled(false);
 
-    auto font = Font::GlyphData("CL650.xpwwf", product->identifierByte, product->hardwareType);
-    if (!font.empty()) {
-        for (auto &packet : font) {
-            product->writeData(packet);
-        }
-    } else {
-        product->setFont(FontVariant::FontAirbus);
-    }
+    product->setFont(FontVariant::FontAirbus);
 
     const std::string cdu = product->deviceVariant == FMCDeviceVariant::VARIANT_CAPTAIN ? "1" : "2";
     const std::string screenBrtRef = "CL650/CDU/" + cdu + "/screen/brt";
@@ -233,11 +226,8 @@ const std::unordered_map<FMCKey, const FMCButtonDef *> &CL650FMCProfile::buttonK
 }
 
 const std::map<char, FMCTextColor> &CL650FMCProfile::colorMap() const {
-    // CL650 style byte: low nibble = color index, high nibble 0x80 = large font.
-    // Verified: 0x00=white, 0x01=cyan, 0x04=magenta (labels).
-    // 0x03=white (appears as normal text on INDENT page).
-    // 0x07=default/empty — leave unmapped so it falls through to COLOR_WHITE.
-    // Green/amber/red likely use indices 0x02/0x05/0x06 on pages we haven't dumped yet.
+    // CL650 style byte: low nibble = colour index, 0x80 = large font. 0x07 is default/empty,
+    // left unmapped so it falls through to COLOR_WHITE.
     static const std::map<char, FMCTextColor> colMap = {
         {0x00, FMCTextColor::COLOR_WHITE},
         {0x01, FMCTextColor::COLOR_CYAN},
