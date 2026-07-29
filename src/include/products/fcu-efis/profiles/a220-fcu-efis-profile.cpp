@@ -16,7 +16,8 @@
 // baro state (both PFDs read barometer_setting_in_hg_pilot) and a single FD state.
 
 static constexpr const char *kBaroPilot = "sim/cockpit2/gauges/actuators/barometer_setting_in_hg_pilot";
-static constexpr const char *kBaroMode = "a220/barometer/mode"; // 0 = inHg, 1 = hPa
+static constexpr const char *kBaroMode = "a220/barometer/mode";              // 0 = inHg, 1 = hPa
+static constexpr const char *kAltStep = "sim/aircraft/autopilot/alt_step_ft"; // 10, 100, 500 or 1000
 
 A220FCUEfisProfile::A220FCUEfisProfile(ProductFCUEfis *product) : FCUEfisAircraftProfile(product) {
     // The aircraft has no panel dimming logic, so backlights simply follow avionics power.
@@ -116,12 +117,15 @@ const std::unordered_map<uint16_t, FCUEfisButtonDef> &A220FCUEfisProfile::button
         {15, {"HDG PUSH", "a220/autopilot/hdgAPSynchPush", FCUEfisDatarefType::EXECUTE_CMD_PHASED}},
         {16, {"HDG PULL", "a220/autopilot/HDGActivate", FCUEfisDatarefType::EXECUTE_CMD_PHASED}},
 
-        // Altitude encoder. Push cycles the 10/100/500/1000 ft step, which is why the
-        // hardware ALT 100 / ALT 1000 selector (25, 26) is left unmapped.
+        // Altitude encoder. Push cycles the aircraft's 10/100/500/1000 ft step.
         {17, {"ALT DEC", "a220/autopilot/altAPDecrease", FCUEfisDatarefType::EXECUTE_CMD_PHASED}},
         {18, {"ALT INC", "a220/autopilot/altAPIncrease", FCUEfisDatarefType::EXECUTE_CMD_PHASED}},
         {19, {"ALT PUSH", "a220/autopilot/altAPPush", FCUEfisDatarefType::EXECUTE_CMD_PHASED}},
         {20, {"ALT PULL", "a220/autopilot/ALTActivate", FCUEfisDatarefType::EXECUTE_CMD_PHASED}},
+
+        // Step selector, handled in buttonPressed.
+        {25, {"ALT STEP", kAltStep, FCUEfisDatarefType::SET_VALUE, 100.0}},
+        {26, {"ALT STEP", kAltStep, FCUEfisDatarefType::SET_VALUE, 1000.0}},
 
         // Vertical speed encoder. The A220 has no VS sync, so push (23) is unmapped.
         {21, {"VS DEC", "a220/autopilot/vsAPDecrease", FCUEfisDatarefType::EXECUTE_CMD_PHASED}},
@@ -240,6 +244,32 @@ void A220FCUEfisProfile::buttonPressed(const FCUEfisButtonDef *button, XPLMComma
     }
 
     auto datarefManager = Dataref::getInstance();
+
+    if (button->name == "ALT STEP") {
+        if (phase != xplm_CommandBegin) {
+            return;
+        }
+
+        // The aircraft's own knob handler steps by a Lua-local index, not by alt_step_ft, so
+        // writing the dataref alone would not change the step. altAPPush advances that index
+        // and publishes the new value to alt_step_ft, so pushing until the dataref matches
+        // brings the aircraft's step in line with the hardware selector. Steps cycle through
+        // 10/100/500/1000, so the target is always reached within one full cycle.
+        bool matched = false;
+        for (int attempt = 0; attempt < 5 && !matched; ++attempt) {
+            matched = altStepSynced && std::fabs(datarefManager->get<float>(kAltStep) - button->value) < 0.5f;
+            if (!matched) {
+                datarefManager->executeCommand("a220/autopilot/altAPPush");
+                altStepSynced = true;
+            }
+        }
+
+        if (!matched) {
+            datarefManager->set<float>(kAltStep, button->value);
+        }
+
+        return;
+    }
 
     if (button->datarefType == FCUEfisDatarefType::BAROMETER_PILOT || button->datarefType == FCUEfisDatarefType::BAROMETER_FO) {
         if (phase != xplm_CommandBegin) {

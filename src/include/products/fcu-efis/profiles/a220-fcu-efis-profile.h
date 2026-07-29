@@ -8,6 +8,11 @@
 #include <unordered_map>
 
 class A220FCUEfisProfile : public FCUEfisAircraftProfile {
+    private:
+        // alt_step_ft only mirrors the aircraft's internal step once it has been cycled at
+        // least once, so the first selector use always cycles rather than trusting the value.
+        bool altStepSynced = false;
+
     public:
         A220FCUEfisProfile(ProductFCUEfis *product);
 

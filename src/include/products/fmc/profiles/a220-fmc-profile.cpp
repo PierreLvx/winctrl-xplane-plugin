@@ -14,7 +14,7 @@
 
 A220FMCProfile::A220FMCProfile(ProductFMC *product) : FMCAircraftProfile(product) {
     product->setAllLedsEnabled(false);
-    product->setFont(FontVariant::Default);
+    product->setFont(FontVariant::FontAirbus);
 
     // The aircraft has no CDU dimming, so brightness simply follows avionics power.
     Dataref::getInstance()->monitorExistingDataref<int>("a220/electrical/power_status", [product](int powered) {
