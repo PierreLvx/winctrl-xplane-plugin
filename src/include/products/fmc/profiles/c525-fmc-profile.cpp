@@ -24,14 +24,7 @@ C525FMCProfile::C525FMCProfile(ProductFMC *product) : FMCAircraftProfile(product
     },
         this);
 
-    auto font = Font::GlyphData("UNS1.xpwwf", product->identifierByte, product->hardwareType);
-    if (!font.empty()) {
-        for (auto &packet : font) {
-            product->writeData(packet);
-        }
-    } else {
-        product->setFont(FontVariant::Default);
-    }
+    product->setFont(FontVariant::Default);
 }
 
 bool C525FMCProfile::IsEligible() {

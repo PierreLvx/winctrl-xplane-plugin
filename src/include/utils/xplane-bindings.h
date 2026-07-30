@@ -15,8 +15,11 @@
 // 20 device slots x 160 buttons, 0 = unassigned), monitored through Dataref
 // so mid-session rebinds apply immediately; the array already reflects the
 // active control profile for the loaded aircraft. The slot-to-device mapping
-// comes from the _joy_unique_id entries in X-Plane Joystick Settings.prf,
-// which X-Plane rewrites whenever the user leaves the settings screen.
+// comes from the _joy_unique_id and _joy_location entries in X-Plane Joystick
+// Settings.prf, which X-Plane rewrites whenever the user leaves the settings
+// screen. X-Plane binds per slot, and the USB serial in _joy_location is what
+// identifies which physical unit a slot is, so two identical units keep
+// separate bindings.
 //
 // In-slot indices match the plugin's hardwareButtonIndex one-to-one (verified
 // on hardware: MCDU KEY2 = plugin 33 = in-slot 33); only the settings UI
@@ -25,24 +28,35 @@ class XPlaneBindings {
     private:
         XPlaneBindings() = default;
 
-        // (vendorId << 16) | productId per device slot, from the prf. A
-        // device plugged in mid-session is absent until X-Plane rewrites the
-        // file on the next settings-screen visit or exit.
-        std::unordered_map<unsigned, uint32_t> slotVidPid;
+        struct SlotDevice {
+                uint32_t vidPid = 0;
+                std::string serial;
+        };
 
-        // Buttons with an X-Plane assignment, keyed by
-        // (vendorId << 16) | productId. Identical units share a VID/PID and
-        // merge into one set; a binding on either suppresses both.
+        std::unordered_map<unsigned, SlotDevice> slotDevices;
+
+        // Merged across identical units, used when the prf cannot identify
+        // units of this product apart.
         std::unordered_map<uint32_t, std::unordered_set<uint16_t>> boundButtons;
+
+        // Per physical unit: vidPid -> list of (serial, buttons). A list
+        // because lookups compare with serialsMatch, not equality.
+        std::unordered_map<uint32_t, std::vector<std::pair<std::string, std::unordered_set<uint16_t>>>> boundButtonsPerUnit;
+
+        // Products whose every known slot carries a serial, so boundButtonsPerUnit
+        // is authoritative for them.
+        std::unordered_set<uint32_t> perUnitProducts;
 
         void loadSlotMapping();
         void rebuildFromAssignments(const std::vector<int> &assignments);
+        std::unordered_set<uint16_t> *findUnitButtons(uint32_t vidPid, const std::string &serial);
+        std::unordered_set<uint16_t> &unitButtons(uint32_t vidPid, const std::string &serial);
 
     public:
         static XPlaneBindings *getInstance();
 
         void reload();
-        bool isButtonBound(uint16_t vendorId, uint16_t productId, uint16_t buttonIndex);
+        bool isButtonBound(uint16_t vendorId, uint16_t productId, const std::string &serialNumber, uint16_t buttonIndex);
 };
 
 #endif

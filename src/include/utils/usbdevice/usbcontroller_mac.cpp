@@ -116,10 +116,12 @@ void USBController::DeviceAddedCallback(void *context, IOReturn result, void *se
     int vendorId = 0, productId = 0;
     char vendorNameBuf[256] = {0};
     char productNameBuf[256] = {0};
+    char serialNumberBuf[256] = {0};
     CFTypeRef vidRef = IOHIDDeviceGetProperty(device, CFSTR(kIOHIDVendorIDKey));
     CFTypeRef pidRef = IOHIDDeviceGetProperty(device, CFSTR(kIOHIDProductIDKey));
     CFTypeRef vendorNameRef = IOHIDDeviceGetProperty(device, CFSTR(kIOHIDManufacturerKey));
     CFTypeRef productNameRef = IOHIDDeviceGetProperty(device, CFSTR(kIOHIDProductKey));
+    CFTypeRef serialNumberRef = IOHIDDeviceGetProperty(device, CFSTR(kIOHIDSerialNumberKey));
     if (vidRef && CFGetTypeID(vidRef) == CFNumberGetTypeID()) {
         CFNumberGetValue((CFNumberRef) vidRef, kCFNumberIntType, &vendorId);
     }
@@ -132,19 +134,24 @@ void USBController::DeviceAddedCallback(void *context, IOReturn result, void *se
     if (productNameRef && CFGetTypeID(productNameRef) == CFStringGetTypeID()) {
         CFStringGetCString((CFStringRef) productNameRef, productNameBuf, sizeof(productNameBuf), kCFStringEncodingUTF8);
     }
+    if (serialNumberRef && CFGetTypeID(serialNumberRef) == CFStringGetTypeID()) {
+        CFStringGetCString((CFStringRef) serialNumberRef, serialNumberBuf, sizeof(serialNumberBuf), kCFStringEncodingUTF8);
+    }
 
     std::string vendorNameStr = std::string(vendorNameBuf);
     std::string productNameStr = std::string(productNameBuf);
+    std::string serialNumberStr = std::string(serialNumberBuf);
     vendorNameStr.erase(0, vendorNameStr.find_first_not_of(" \t\n\r"));
     vendorNameStr.erase(vendorNameStr.find_last_not_of(" \t\n\r") + 1);
     productNameStr.erase(0, productNameStr.find_first_not_of(" \t\n\r"));
     productNameStr.erase(productNameStr.find_last_not_of(" \t\n\r") + 1);
 
     CFRetain(device);
-    AppState::getInstance()->executeAfter(0, self, [self, device, vendorId, productId, vendorNameStr, productNameStr]() {
+    AppState::getInstance()->executeAfter(0, self, [self, device, vendorId, productId, vendorNameStr, productNameStr, serialNumberStr]() {
         if (!self->deviceExistsWithHIDDevice(device)) {
             USBDevice *newDevice = USBDevice::Device(device, vendorId, productId, vendorNameStr, productNameStr);
             if (newDevice) {
+                newDevice->serialNumber = serialNumberStr;
                 self->devices.push_back(newDevice);
             }
         }

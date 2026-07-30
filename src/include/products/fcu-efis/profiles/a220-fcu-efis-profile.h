@@ -1,25 +1,20 @@
-#ifndef FF777_FCU_EFIS_PROFILE_H
-#define FF777_FCU_EFIS_PROFILE_H
+#ifndef A220_FCU_EFIS_PROFILE_H
+#define A220_FCU_EFIS_PROFILE_H
 
 #include "fcu-efis-aircraft-profile.h"
 
 #include <map>
 #include <string>
-#include <vector>
+#include <unordered_map>
 
-class FF777FCUEfisProfile : public FCUEfisAircraftProfile {
+class A220FCUEfisProfile : public FCUEfisAircraftProfile {
     private:
-        bool isTestMode();
-        bool isStdCaptain = false;
-        bool isStdFirstOfficer = false;
-
-        // The STD button /anim is a damped spring (overshoots 1.0, undershoots 0)
-        // stepping every ~80-140ms. Latch the down-edge so one press = one toggle.
-        bool stdButtonDownCaptain = false;
-        bool stdButtonDownFirstOfficer = false;
+        // alt_step_ft only mirrors the aircraft's internal step once it has been cycled at
+        // least once, so the first selector use always cycles rather than trusting the value.
+        bool altStepSynced = false;
 
     public:
-        FF777FCUEfisProfile(ProductFCUEfis *product);
+        A220FCUEfisProfile(ProductFCUEfis *product);
 
         static bool IsEligible();
 
@@ -38,4 +33,4 @@ class FF777FCUEfisProfile : public FCUEfisAircraftProfile {
         void buttonPressed(const FCUEfisButtonDef *button, XPLMCommandPhase phase) override;
 };
 
-#endif
+#endif // A220_FCU_EFIS_PROFILE_H

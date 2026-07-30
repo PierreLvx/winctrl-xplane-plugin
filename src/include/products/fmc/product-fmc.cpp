@@ -4,6 +4,7 @@
 #include "config.h"
 #include "dataref.h"
 #include "plugins-menu.h"
+#include "profiles/a220-fmc-profile.h"
 #include "profiles/bae146-fmc-profile.h"
 #include "profiles/c525-fmc-profile.h"
 #include "profiles/ff350-fmc-profile.h"
@@ -157,6 +158,10 @@ void ProductFMC::setProfileForCurrentAircraft() {
     } else if (PA28FMCProfile::IsEligible()) {
         clearDisplay();
         profile = new PA28FMCProfile(this);
+        profileReady = true;
+    } else if (A220FMCProfile::IsEligible()) {
+        clearDisplay();
+        profile = new A220FMCProfile(this);
         profileReady = true;
     } else if (Felis742LTNFMCProfile::IsEligible()) {
         clearDisplay();

@@ -15,6 +15,7 @@
 #include "product-ursa-minor-throttle.h"
 #include "xplane-bindings.h"
 
+#include <set>
 #include <XPLMUtilities.h>
 
 // The desktop app overrides this function to get notified of button presses
@@ -160,10 +161,18 @@ USBDevice *USBDevice::Device(HIDDeviceHandle hidDevice, uint16_t vendorId, uint1
 
             // Not yet implemented devices:
             // 0xB980 = WINCTRL Orion 32 Rudder Pedals Metal
+            // 0xBEF0 = WINCTRL Orion Combat Rudder Pedals Metal
 
-        default:
-            Logger::getInstance()->info("Unknown WINCTRL device - vendorId: 0x%04X, productId: 0x%04X (%s)\n", vendorId, productId, productName.c_str());
+        default: {
+            // Device creation is retried on every enumeration pass, so log each
+            // unsupported product once instead of every few seconds. Creation
+            // only ever runs on the flight loop, so no lock is needed.
+            static std::set<uint32_t> loggedUnknownProducts;
+            if (loggedUnknownProducts.insert(((uint32_t) vendorId << 16) | productId).second) {
+                Logger::getInstance()->info("Unknown WINCTRL device - vendorId: 0x%04X, productId: 0x%04X (%s)\n", vendorId, productId, productName.c_str());
+            }
             return nullptr;
+        }
     }
 }
 
@@ -190,9 +199,9 @@ void USBDevice::didReceiveButton(uint16_t hardwareButtonIndex, bool pressed, uin
 }
 
 bool USBDevice::isButtonHandledByXPlane(uint16_t hardwareButtonIndex) {
-    bool handled = XPlaneBindings::getInstance()->isButtonBound(vendorId, productId, hardwareButtonIndex);
+    bool handled = XPlaneBindings::getInstance()->isButtonBound(vendorId, productId, serialNumber, hardwareButtonIndex);
     if (handled) {
-        Logger::getInstance()->debug("Button %u on %s (0x%04X:0x%04X) is overridden in X-Plane joystick settings; suppressing plugin action\n", hardwareButtonIndex, productName.c_str(), vendorId, productId);
+        Logger::getInstance()->debug("Button %u on %s (0x%04X:0x%04X, serial %s) is overridden in X-Plane joystick settings; suppressing plugin action\n", hardwareButtonIndex, productName.c_str(), vendorId, productId, serialNumber.empty() ? "unknown" : serialNumber.c_str());
     }
     return handled;
 }

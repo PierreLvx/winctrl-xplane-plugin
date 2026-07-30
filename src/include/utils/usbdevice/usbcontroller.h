@@ -59,12 +59,13 @@ class USBController {
         bool deviceExistsWithHIDDevice(IOHIDDeviceRef device);
 #elif IBM
         void checkForDeviceChanges();
-        void enumerateHidDevices(std::function<void(HANDLE, const std::string &)> deviceHandler);
+        void enumerateHidDevices(std::function<void(HANDLE, const std::string &, const std::string &)> deviceHandler);
         USBDevice *createDeviceFromHandle(HANDLE hidDevice, const std::string &devicePath);
-        bool deviceExistsWithHandle(HANDLE hidDevice);
         bool deviceExistsWithPath(const std::string &devicePath);
-        bool deviceExistsWithVidPid(uint16_t vendorId, uint16_t productId);
-        void addDeviceFromHandle(HANDLE hidDevice, const std::string &devicePath);
+        // Group key identifies a physical device (container ID + vendor/product),
+        // not just a product ID, so two identical units both get an object.
+        bool deviceExistsWithGroupKey(const std::string &groupKey);
+        void addDeviceFromHandle(HANDLE hidDevice, const std::string &devicePath, const std::string &groupKey);
 #elif LIN
         static void DeviceAddedCallback(void *context, struct udev_device *device);
         static void DeviceRemovedCallback(void *context, struct udev_device *device);

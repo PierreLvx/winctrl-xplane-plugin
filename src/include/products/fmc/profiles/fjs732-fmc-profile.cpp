@@ -24,14 +24,7 @@ FJS732FMCProfile::FJS732FMCProfile(ProductFMC *product) : FMCAircraftProfile(pro
     },
         this);
 
-    auto font = Font::GlyphData("UNS1.xpwwf", product->identifierByte, product->hardwareType);
-    if (!font.empty()) {
-        for (auto &packet : font) {
-            product->writeData(packet);
-        }
-    } else {
-        product->setFont(FontVariant::Default);
-    }
+    product->setFont(FontVariant::Default);
 }
 
 bool FJS732FMCProfile::IsEligible() {

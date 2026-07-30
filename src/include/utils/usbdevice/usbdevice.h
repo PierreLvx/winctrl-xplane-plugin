@@ -98,6 +98,9 @@ class USBDevice {
         uint16_t productId;
         std::string vendorName;
         std::string productName;
+        // Set by the platform controller after construction; empty when the
+        // device has no serial or it could not be read.
+        std::string serialNumber;
 
         virtual const char *classIdentifier();
         virtual const char *activeProfileName() const;
