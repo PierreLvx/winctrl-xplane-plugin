@@ -1,8 +1,8 @@
 #include "felis742-ltn-fmc-profile.h"
 
 #include "dataref.h"
-#include "product-fmc.h"
 #include "logger.hpp"
+#include "product-fmc.h"
 
 #include <algorithm>
 #include <array>
@@ -106,63 +106,58 @@ Felis742LTNFMCProfile::Felis742LTNFMCProfile(ProductFMC *product) : FMCAircraftP
     },
         this);
 
-    // The LTN-92 dot-matrix screen font should be placed as LTN.xpwwf; fall back to
-    // the built-in 747 font if it has not been deployed yet.
-    auto font = Font::GlyphData("LTN.xpwwf", product->identifierByte, product->hardwareType);
-    if (!font.empty()) {
-        for (auto &packet : font) {
-            product->writeData(packet);
-        }
-    } else {
-        product->setFont(FontVariant::Font744);
-    }
+    product->setFont(FontVariant::Font744);
 
     Logger::getInstance()->info("FMC: Felis 747-200 LTN-92 profile active (unit LTN%i)\n", unitNumber);
     Dataref::getInstance()->executeChangedCallbacksForDataref("sim/cockpit2/electrical/instrument_brightness_ratio");
 }
 
 void Felis742LTNFMCProfile::buildButtons() {
-    auto L = [this](int index) { return unitPrefix + "/but_letters[" + std::to_string(index) + "]"; };
-    auto S = [this](const std::string &name) { return unitPrefix + "/" + name; };
+    auto L = [this](int index) {
+        return unitPrefix + "/but_letters[" + std::to_string(index) + "]";
+    };
+    auto S = [this](const std::string &name) {
+        return unitPrefix + "/" + name;
+    };
     using DT = FMCDatarefType;
 
     // Alpha keys A-Z -> but_letters[0..25]; digit, slew and brightness aliases are
     // folded into whichever alpha key the LTN prints them on. Page functions (POS,
     // CRS, ...) live on those same alpha keys, so mapping the letters covers them.
     buttons = {
-        {FMCKey::KEYA, L(0), DT::SET_VALUE_PHASED},                                                              // A / POS
-        {FMCKey::KEYB, L(1), DT::SET_VALUE_PHASED},                                                              // B / CRS
-        {std::vector<FMCKey>{FMCKey::KEYC, FMCKey::PFP_LEGS}, L(2), DT::SET_VALUE_PHASED},                       // C / LEG
-        {std::vector<FMCKey>{FMCKey::KEYD, FMCKey::BRIGHTNESS_UP}, L(3), DT::SET_VALUE_PHASED},                  // D / BRT
-        {std::vector<FMCKey>{FMCKey::KEYE, FMCKey::KEY1}, L(4), DT::SET_VALUE_PHASED},                           // E / 1
-        {std::vector<FMCKey>{FMCKey::KEYF, FMCKey::KEY2}, L(5), DT::SET_VALUE_PHASED},                           // F / 2 (N)
-        {std::vector<FMCKey>{FMCKey::KEYG, FMCKey::KEY3}, L(6), DT::SET_VALUE_PHASED},                           // G / 3
-        {FMCKey::KEYH, L(7), DT::SET_VALUE_PHASED},                                                              // H / WPT
-        {std::vector<FMCKey>{FMCKey::KEYI, FMCKey::MCDU_FPLN, FMCKey::PFP_ROUTE}, L(8), DT::SET_VALUE_PHASED},   // I / FPL
-        {std::vector<FMCKey>{FMCKey::KEYJ, FMCKey::MCDU_DIR, FMCKey::PFP_INIT_REF}, L(9), DT::SET_VALUE_PHASED}, // J / DIR
-        {std::vector<FMCKey>{FMCKey::KEYK, FMCKey::BRIGHTNESS_DOWN}, L(10), DT::SET_VALUE_PHASED},               // K / DIM
-        {std::vector<FMCKey>{FMCKey::KEYL, FMCKey::KEY4}, L(11), DT::SET_VALUE_PHASED},                          // L / 4 (W)
-        {std::vector<FMCKey>{FMCKey::KEYM, FMCKey::KEY5}, L(12), DT::SET_VALUE_PHASED},                          // M / 5
-        {std::vector<FMCKey>{FMCKey::KEYN, FMCKey::KEY6}, L(13), DT::SET_VALUE_PHASED},                          // N / 6 (E)
-        {std::vector<FMCKey>{FMCKey::KEYO, FMCKey::MCDU_DATA}, L(14), DT::SET_VALUE_PHASED},                     // O / DATA
-        {FMCKey::KEYP, L(15), DT::SET_VALUE_PHASED},                                                             // P / CAT
-        {FMCKey::KEYQ, L(16), DT::SET_VALUE_PHASED},                                                             // Q / RMT
-        {std::vector<FMCKey>{FMCKey::KEYR, FMCKey::PAGE_PREV, FMCKey::MCDU_PAGE_UP}, L(17), DT::SET_VALUE_PHASED},     // R / slew up
-        {std::vector<FMCKey>{FMCKey::KEYS, FMCKey::KEY7}, L(18), DT::SET_VALUE_PHASED},                          // S / 7 (L)
-        {std::vector<FMCKey>{FMCKey::KEYT, FMCKey::KEY8}, L(19), DT::SET_VALUE_PHASED},                          // T / 8 (S)
-        {std::vector<FMCKey>{FMCKey::KEYU, FMCKey::KEY9}, L(20), DT::SET_VALUE_PHASED},                          // U / 9 (R)
-        {std::vector<FMCKey>{FMCKey::KEYV, FMCKey::PROG}, L(21), DT::SET_VALUE_PHASED},                          // V / STS
-        {FMCKey::KEYW, L(22), DT::SET_VALUE_PHASED},                                                             // W
-        {FMCKey::KEYX, L(23), DT::SET_VALUE_PHASED},                                                             // X
-        {std::vector<FMCKey>{FMCKey::KEYY, FMCKey::PAGE_NEXT, FMCKey::MCDU_PAGE_DOWN}, L(24), DT::SET_VALUE_PHASED},   // Y / slew down
-        {FMCKey::KEYZ, L(25), DT::SET_VALUE_PHASED},                                                             // Z / EXP
-        {FMCKey::KEY0, L(26), DT::SET_VALUE_PHASED},                                                             // 0
-        {FMCKey::PFP_HOLD, L(27), DT::SET_VALUE_PHASED},                                                         // ( ) / HLD
+        {FMCKey::KEYA, L(0), DT::SET_VALUE_PHASED},                                                                  // A / POS
+        {FMCKey::KEYB, L(1), DT::SET_VALUE_PHASED},                                                                  // B / CRS
+        {std::vector<FMCKey>{FMCKey::KEYC, FMCKey::PFP_LEGS}, L(2), DT::SET_VALUE_PHASED},                           // C / LEG
+        {std::vector<FMCKey>{FMCKey::KEYD, FMCKey::BRIGHTNESS_UP}, L(3), DT::SET_VALUE_PHASED},                      // D / BRT
+        {std::vector<FMCKey>{FMCKey::KEYE, FMCKey::KEY1}, L(4), DT::SET_VALUE_PHASED},                               // E / 1
+        {std::vector<FMCKey>{FMCKey::KEYF, FMCKey::KEY2}, L(5), DT::SET_VALUE_PHASED},                               // F / 2 (N)
+        {std::vector<FMCKey>{FMCKey::KEYG, FMCKey::KEY3}, L(6), DT::SET_VALUE_PHASED},                               // G / 3
+        {FMCKey::KEYH, L(7), DT::SET_VALUE_PHASED},                                                                  // H / WPT
+        {std::vector<FMCKey>{FMCKey::KEYI, FMCKey::MCDU_FPLN, FMCKey::PFP_ROUTE}, L(8), DT::SET_VALUE_PHASED},       // I / FPL
+        {std::vector<FMCKey>{FMCKey::KEYJ, FMCKey::MCDU_DIR, FMCKey::PFP_INIT_REF}, L(9), DT::SET_VALUE_PHASED},     // J / DIR
+        {std::vector<FMCKey>{FMCKey::KEYK, FMCKey::BRIGHTNESS_DOWN}, L(10), DT::SET_VALUE_PHASED},                   // K / DIM
+        {std::vector<FMCKey>{FMCKey::KEYL, FMCKey::KEY4}, L(11), DT::SET_VALUE_PHASED},                              // L / 4 (W)
+        {std::vector<FMCKey>{FMCKey::KEYM, FMCKey::KEY5}, L(12), DT::SET_VALUE_PHASED},                              // M / 5
+        {std::vector<FMCKey>{FMCKey::KEYN, FMCKey::KEY6}, L(13), DT::SET_VALUE_PHASED},                              // N / 6 (E)
+        {std::vector<FMCKey>{FMCKey::KEYO, FMCKey::MCDU_DATA}, L(14), DT::SET_VALUE_PHASED},                         // O / DATA
+        {FMCKey::KEYP, L(15), DT::SET_VALUE_PHASED},                                                                 // P / CAT
+        {FMCKey::KEYQ, L(16), DT::SET_VALUE_PHASED},                                                                 // Q / RMT
+        {std::vector<FMCKey>{FMCKey::KEYR, FMCKey::PAGE_PREV, FMCKey::MCDU_PAGE_UP}, L(17), DT::SET_VALUE_PHASED},   // R / slew up
+        {std::vector<FMCKey>{FMCKey::KEYS, FMCKey::KEY7}, L(18), DT::SET_VALUE_PHASED},                              // S / 7 (L)
+        {std::vector<FMCKey>{FMCKey::KEYT, FMCKey::KEY8}, L(19), DT::SET_VALUE_PHASED},                              // T / 8 (S)
+        {std::vector<FMCKey>{FMCKey::KEYU, FMCKey::KEY9}, L(20), DT::SET_VALUE_PHASED},                              // U / 9 (R)
+        {std::vector<FMCKey>{FMCKey::KEYV, FMCKey::PROG}, L(21), DT::SET_VALUE_PHASED},                              // V / STS
+        {FMCKey::KEYW, L(22), DT::SET_VALUE_PHASED},                                                                 // W
+        {FMCKey::KEYX, L(23), DT::SET_VALUE_PHASED},                                                                 // X
+        {std::vector<FMCKey>{FMCKey::KEYY, FMCKey::PAGE_NEXT, FMCKey::MCDU_PAGE_DOWN}, L(24), DT::SET_VALUE_PHASED}, // Y / slew down
+        {FMCKey::KEYZ, L(25), DT::SET_VALUE_PHASED},                                                                 // Z / EXP
+        {FMCKey::KEY0, L(26), DT::SET_VALUE_PHASED},                                                                 // 0
+        {FMCKey::PFP_HOLD, L(27), DT::SET_VALUE_PHASED},                                                             // ( ) / HLD
 
         // Dedicated keys (scalar int datarefs).
-        {FMCKey::PLUSMINUS, S("but_A_N"), DT::SET_VALUE_PHASED},                                                 // A/N shift
-        {std::vector<FMCKey>{FMCKey::CLR, FMCKey::PFP_DEL}, S("but_CLR"), DT::SET_VALUE_PHASED},                 // CLR
-        {std::vector<FMCKey>{FMCKey::PFP_EXEC, FMCKey::MCDU_OVERFLY}, S("but_ENT"), DT::SET_VALUE_PHASED},       // ENT
+        {FMCKey::PLUSMINUS, S("but_A_N"), DT::SET_VALUE_PHASED},                                           // A/N shift
+        {std::vector<FMCKey>{FMCKey::CLR, FMCKey::PFP_DEL}, S("but_CLR"), DT::SET_VALUE_PHASED},           // CLR
+        {std::vector<FMCKey>{FMCKey::PFP_EXEC, FMCKey::MCDU_OVERFLY}, S("but_ENT"), DT::SET_VALUE_PHASED}, // ENT
     };
 
     keyMap.clear();

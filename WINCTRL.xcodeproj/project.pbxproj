@@ -18,10 +18,6 @@
 		A2200000000000000000B0F1 /* a220-fcu-efis-profile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A2200000000000000000C0FE /* a220-fcu-efis-profile.cpp */; };
 		A2200000000000000000B0F2 /* a220-fcu-efis-profile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A2200000000000000000C0FE /* a220-fcu-efis-profile.cpp */; };
 		A2200000000000000000B0F3 /* a220-fmc-profile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A2200000000000000000C0FC /* a220-fmc-profile.cpp */; };
-		B5800000000000000000B0F1 /* b58-fcu-efis-profile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B5800000000000000000C0FE /* b58-fcu-efis-profile.cpp */; };
-		B5800000000000000000B0F2 /* b58-fcu-efis-profile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B5800000000000000000C0FE /* b58-fcu-efis-profile.cpp */; };
-		B5800000000000000000B0F3 /* b58-pap3-mcp-profile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B5800000000000000000C0FD /* b58-pap3-mcp-profile.cpp */; };
-		B5800000000000000000B0F4 /* b58-pap3-mcp-profile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B5800000000000000000C0FD /* b58-pap3-mcp-profile.cpp */; };
 		A2200000000000000000B0F4 /* a220-fmc-profile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A2200000000000000000C0FC /* a220-fmc-profile.cpp */; };
 		AF1720CC2FB71A19004849B1 /* c172-afl-fcu-efis-profile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AF1720C92FB71A19004849B1 /* c172-afl-fcu-efis-profile.cpp */; };
 		AF1720CE2FB71A19004849B1 /* c172-afl-fcu-efis-profile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AF1720C92FB71A19004849B1 /* c172-afl-fcu-efis-profile.cpp */; };
@@ -37,6 +33,10 @@
 		AF9A28EA2FB71A19004849B1 /* pa28-ursa-minor-throttle-profile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AF9A28E82FB71A19004849B1 /* pa28-ursa-minor-throttle-profile.cpp */; };
 		AF9A28ED2FB71A19004849B1 /* pa28-fmc-profile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AF9A28EC2FB71A19004849B1 /* pa28-fmc-profile.cpp */; };
 		AF9A28EE2FB71A19004849B1 /* pa28-fmc-profile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AF9A28EC2FB71A19004849B1 /* pa28-fmc-profile.cpp */; };
+		B5800000000000000000B0F1 /* b58-fcu-efis-profile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B5800000000000000000C0FE /* b58-fcu-efis-profile.cpp */; };
+		B5800000000000000000B0F2 /* b58-fcu-efis-profile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B5800000000000000000C0FE /* b58-fcu-efis-profile.cpp */; };
+		B5800000000000000000B0F3 /* b58-pap3-mcp-profile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B5800000000000000000C0FD /* b58-pap3-mcp-profile.cpp */; };
+		B5800000000000000000B0F4 /* b58-pap3-mcp-profile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B5800000000000000000C0FD /* b58-pap3-mcp-profile.cpp */; };
 		BAE14600000000000000B001 /* bae146-fmc-profile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BAE14600000000000000C0DE /* bae146-fmc-profile.cpp */; };
 		BAE14600000000000000B002 /* bae146-fmc-profile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BAE14600000000000000C0DE /* bae146-fmc-profile.cpp */; };
 		CA8215366A511F3E4231C25A /* sparky744-fmc-profile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BE235D138BEFE0AA64B3E71E /* sparky744-fmc-profile.cpp */; };
@@ -163,6 +163,8 @@
 		F69575062FFE7B74006C0A76 /* product-nws.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F69575032FFE7B74006C0A76 /* product-nws.cpp */; };
 		F69575072FFE7B74006C0A76 /* toliss-nws-profile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F69574FF2FFE7B74006C0A76 /* toliss-nws-profile.cpp */; };
 		F69575082FFE7B74006C0A76 /* product-nws.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F69575032FFE7B74006C0A76 /* product-nws.cpp */; };
+		F69CA2CE301B860A001B0847 /* felis742-ltn-fmc-profile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F69CA2CD301B860A001B0847 /* felis742-ltn-fmc-profile.cpp */; };
+		F69CA2CF301B860A001B0847 /* felis742-ltn-fmc-profile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F69CA2CD301B860A001B0847 /* felis742-ltn-fmc-profile.cpp */; };
 		F69FF22D2E1D13CB00F9D2D9 /* GenericDeviceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F69FF2292E1D13CB00F9D2D9 /* GenericDeviceView.swift */; };
 		F69FF22E2E1D13CB00F9D2D9 /* DeviceModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F69FF2282E1D13CB00F9D2D9 /* DeviceModel.swift */; };
 		F69FF22F2E1D13CB00F9D2D9 /* JoystickControlView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F69FF22A2E1D13CB00F9D2D9 /* JoystickControlView.swift */; };
@@ -283,10 +285,6 @@
 		A2200000000000000000A0FE /* a220-fcu-efis-profile.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "a220-fcu-efis-profile.h"; sourceTree = "<group>"; };
 		A2200000000000000000C0FC /* a220-fmc-profile.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "a220-fmc-profile.cpp"; sourceTree = "<group>"; };
 		A2200000000000000000C0FE /* a220-fcu-efis-profile.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "a220-fcu-efis-profile.cpp"; sourceTree = "<group>"; };
-		B5800000000000000000A0FD /* b58-pap3-mcp-profile.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "b58-pap3-mcp-profile.h"; sourceTree = "<group>"; };
-		B5800000000000000000A0FE /* b58-fcu-efis-profile.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "b58-fcu-efis-profile.h"; sourceTree = "<group>"; };
-		B5800000000000000000C0FD /* b58-pap3-mcp-profile.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "b58-pap3-mcp-profile.cpp"; sourceTree = "<group>"; };
-		B5800000000000000000C0FE /* b58-fcu-efis-profile.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "b58-fcu-efis-profile.cpp"; sourceTree = "<group>"; };
 		AF1720C82FB71A19004849B1 /* c172-afl-fcu-efis-profile.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "c172-afl-fcu-efis-profile.h"; sourceTree = "<group>"; };
 		AF1720C92FB71A19004849B1 /* c172-afl-fcu-efis-profile.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "c172-afl-fcu-efis-profile.cpp"; sourceTree = "<group>"; };
 		AF9A28C82FB71A19004849B1 /* pa28-fcu-efis-profile.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "pa28-fcu-efis-profile.h"; sourceTree = "<group>"; };
@@ -301,6 +299,10 @@
 		AF9A28EB2FB71A19004849B1 /* pa28-ursa-minor-throttle-profile.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "pa28-ursa-minor-throttle-profile.h"; sourceTree = "<group>"; };
 		AF9A28EC2FB71A19004849B1 /* pa28-fmc-profile.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "pa28-fmc-profile.cpp"; sourceTree = "<group>"; };
 		AF9A28EF2FB71A19004849B1 /* pa28-fmc-profile.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "pa28-fmc-profile.h"; sourceTree = "<group>"; };
+		B5800000000000000000A0FD /* b58-pap3-mcp-profile.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "b58-pap3-mcp-profile.h"; sourceTree = "<group>"; };
+		B5800000000000000000A0FE /* b58-fcu-efis-profile.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "b58-fcu-efis-profile.h"; sourceTree = "<group>"; };
+		B5800000000000000000C0FD /* b58-pap3-mcp-profile.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "b58-pap3-mcp-profile.cpp"; sourceTree = "<group>"; };
+		B5800000000000000000C0FE /* b58-fcu-efis-profile.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "b58-fcu-efis-profile.cpp"; sourceTree = "<group>"; };
 		BAE14600000000000000A0DE /* bae146-fmc-profile.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "bae146-fmc-profile.h"; sourceTree = "<group>"; };
 		BAE14600000000000000C0DE /* bae146-fmc-profile.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "bae146-fmc-profile.cpp"; sourceTree = "<group>"; };
 		BE235D138BEFE0AA64B3E71E /* sparky744-fmc-profile.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "sparky744-fmc-profile.cpp"; sourceTree = "<group>"; };
@@ -435,6 +437,11 @@
 		F69575032FFE7B74006C0A76 /* product-nws.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "product-nws.cpp"; sourceTree = "<group>"; };
 		F69BE2962E619CC00019EA48 /* airbus.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = airbus.h; sourceTree = "<group>"; };
 		F69BE2972E61AC210019EA48 /* default.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = default.h; sourceTree = "<group>"; };
+		F69CA2C9301B85A8001B0847 /* LTN.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LTN.h; sourceTree = "<group>"; };
+		F69CA2CA301B85A8001B0847 /* md11-cdu.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "md11-cdu.h"; sourceTree = "<group>"; };
+		F69CA2CB301B85A8001B0847 /* Q4XP.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Q4XP.h; sourceTree = "<group>"; };
+		F69CA2CC301B860A001B0847 /* felis742-ltn-fmc-profile.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "felis742-ltn-fmc-profile.h"; sourceTree = "<group>"; };
+		F69CA2CD301B860A001B0847 /* felis742-ltn-fmc-profile.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "felis742-ltn-fmc-profile.cpp"; sourceTree = "<group>"; };
 		F69FF2282E1D13CB00F9D2D9 /* DeviceModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceModel.swift; sourceTree = "<group>"; };
 		F69FF2292E1D13CB00F9D2D9 /* GenericDeviceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GenericDeviceView.swift; sourceTree = "<group>"; };
 		F69FF22A2E1D13CB00F9D2D9 /* JoystickControlView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JoystickControlView.swift; sourceTree = "<group>"; };
@@ -675,6 +682,9 @@
 				F681E21B2FC9D8BB0009D9FB /* 744.h */,
 				F62D2DF52E55FA4C00D307A4 /* xcrafts.h */,
 				F62304282E59DF8500EE0089 /* vga_1.h */,
+				F69CA2C9301B85A8001B0847 /* LTN.h */,
+				F69CA2CA301B85A8001B0847 /* md11-cdu.h */,
+				F69CA2CB301B85A8001B0847 /* Q4XP.h */,
 			);
 			path = fonts;
 			sourceTree = "<group>";
@@ -806,6 +816,8 @@
 				F672B71A3017AA4500A7D1BC /* c525-fmc-profile.cpp */,
 				F672B71B3017AA4500A7D1BC /* fjs732-fmc-profile.h */,
 				F672B71C3017AA4500A7D1BC /* fjs732-fmc-profile.cpp */,
+				F69CA2CC301B860A001B0847 /* felis742-ltn-fmc-profile.h */,
+				F69CA2CD301B860A001B0847 /* felis742-ltn-fmc-profile.cpp */,
 			);
 			path = profiles;
 			sourceTree = "<group>";
@@ -1278,6 +1290,7 @@
 				F6EBDC142FC6CFD1005AFCBD /* zibo-agp-profile.cpp in Sources */,
 				F621F80C2F1C264A00DDB31E /* jf146-fcu-efis-profile.cpp in Sources */,
 				F6E73EE42ED9CCA7000A8B6A /* toliss-ursa-minor-throttle-profile.cpp in Sources */,
+				F69CA2CF301B860A001B0847 /* felis742-ltn-fmc-profile.cpp in Sources */,
 				AF9A28EA2FB71A19004849B1 /* pa28-ursa-minor-throttle-profile.cpp in Sources */,
 				F64BE3E92E1BF625003C1B73 /* usbcontroller_win.cpp in Sources */,
 				F6B0007A2F8FE329001FE040 /* product-tcas.cpp in Sources */,
@@ -1419,6 +1432,7 @@
 				F603CFA22FCECBA1005DF928 /* ff777-joystick-profile.cpp in Sources */,
 				F603CFA32FCECBA1005DF928 /* zibo-joystick-profile.cpp in Sources */,
 				F603CFA42FCECBA1005DF928 /* toliss-joystick-profile.cpp in Sources */,
+				F69CA2CE301B860A001B0847 /* felis742-ltn-fmc-profile.cpp in Sources */,
 				F6EBDC0C2FC6C740005AFCBD /* xcrafts-erj-agp-profile.cpp in Sources */,
 				F603CF712FCDA132005DF928 /* toliss-rmp-profile.cpp in Sources */,
 				F603CF722FCDA132005DF928 /* product-rmp.cpp in Sources */,
