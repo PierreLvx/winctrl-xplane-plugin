@@ -2,6 +2,8 @@
 
 #include "737.h"
 #include "744.h"
+#include "LTN.h"
+#include "Q4XP.h"
 #include "airbus.h"
 #include "appstate.h"
 #include "config.h"
@@ -78,6 +80,14 @@ const std::vector<std::vector<unsigned char>> Font::GlyphData(FontVariant varian
 
         case FontVariant::FontMD11:
             result = fmcFontMd11Cdu;
+            break;
+
+        case FontVariant::FontLTN:
+            result = fmcFontLTN;
+            break;
+
+        case FontVariant::FontQ4XP:
+            result = fmcFontQ4XP;
             break;
 
         case FontVariant::Default:

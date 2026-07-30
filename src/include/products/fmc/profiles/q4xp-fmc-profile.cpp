@@ -21,7 +21,7 @@ Q4XPFMCProfile::Q4XPFMCProfile(ProductFMC *product) : FMCAircraftProfile(product
     },
         this);
 
-    product->setFont(FontVariant::Default);
+    product->setFont(FontVariant::FontQ4XP);
 }
 
 Q4XPFMCProfile::~Q4XPFMCProfile() {

@@ -106,7 +106,7 @@ Felis742LTNFMCProfile::Felis742LTNFMCProfile(ProductFMC *product) : FMCAircraftP
     },
         this);
 
-    product->setFont(FontVariant::Font744);
+    product->setFont(FontVariant::FontLTN);
 
     Logger::getInstance()->info("FMC: Felis 747-200 LTN-92 profile active (unit LTN%i)\n", unitNumber);
     Dataref::getInstance()->executeChangedCallbacksForDataref("sim/cockpit2/electrical/instrument_brightness_ratio");
