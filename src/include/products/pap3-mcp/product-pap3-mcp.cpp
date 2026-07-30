@@ -5,6 +5,7 @@
 #include "dataref.h"
 #include "pap3-mcp-lcd-segments.h"
 #include "plugins-menu.h"
+#include "profiles/b58-pap3-mcp-profile.h"
 #include "profiles/ff777-pap3-mcp-profile.h"
 #include "profiles/fps748-pap3-mcp-profile.h"
 #include "profiles/laminar-737-pap3-mcp-profile.h"
@@ -77,6 +78,9 @@ void ProductPAP3MCP::setProfileForCurrentAircraft() {
         profileReady = true;
     } else if (Laminar737PAP3MCPProfile::IsEligible()) {
         profile = new Laminar737PAP3MCPProfile(this);
+        profileReady = true;
+    } else if (B58PAP3MCPProfile::IsEligible()) {
+        profile = new B58PAP3MCPProfile(this);
         profileReady = true;
     } else {
         profile = nullptr;
@@ -204,6 +208,7 @@ void ProductPAP3MCP::updateDisplays(bool force) {
         displayData.speedVisible != oldDisplayData.speedVisible ||
         displayData.spdMach != oldDisplayData.spdMach ||
         displayData.headingVisible != oldDisplayData.headingVisible ||
+        displayData.altitudeVisible != oldDisplayData.altitudeVisible ||
         displayData.crsCapt != oldDisplayData.crsCapt ||
         displayData.crsFo != oldDisplayData.crsFo ||
         displayData.showCourse != oldDisplayData.showCourse ||
@@ -377,7 +382,7 @@ void ProductPAP3MCP::sendLCDDisplay(const std::string &speed, int heading, int a
         }
 
         // ALT: 5 digits
-        {
+        if (displayData.altitudeVisible) {
             int d10k, dk, dh, dt, du;
             digits5(std::max(0, altitude), d10k, dk, dh, dt, du);
 

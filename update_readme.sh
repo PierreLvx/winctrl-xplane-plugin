@@ -46,6 +46,7 @@ laminar-737|Laminar 737
 laminar-a333|Laminar A330 (Aerogenesis)
 laminar-citx|Laminar Citation X
 c172-laminar|Laminar C172
+b58|Laminar Baron B58
 c172-afl|Airfoillabs C172
 sparky744|Sparky 744
 jar330|JarDesign A330

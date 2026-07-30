@@ -18,6 +18,10 @@
 		A2200000000000000000B0F1 /* a220-fcu-efis-profile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A2200000000000000000C0FE /* a220-fcu-efis-profile.cpp */; };
 		A2200000000000000000B0F2 /* a220-fcu-efis-profile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A2200000000000000000C0FE /* a220-fcu-efis-profile.cpp */; };
 		A2200000000000000000B0F3 /* a220-fmc-profile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A2200000000000000000C0FC /* a220-fmc-profile.cpp */; };
+		B5800000000000000000B0F1 /* b58-fcu-efis-profile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B5800000000000000000C0FE /* b58-fcu-efis-profile.cpp */; };
+		B5800000000000000000B0F2 /* b58-fcu-efis-profile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B5800000000000000000C0FE /* b58-fcu-efis-profile.cpp */; };
+		B5800000000000000000B0F3 /* b58-pap3-mcp-profile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B5800000000000000000C0FD /* b58-pap3-mcp-profile.cpp */; };
+		B5800000000000000000B0F4 /* b58-pap3-mcp-profile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B5800000000000000000C0FD /* b58-pap3-mcp-profile.cpp */; };
 		A2200000000000000000B0F4 /* a220-fmc-profile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A2200000000000000000C0FC /* a220-fmc-profile.cpp */; };
 		AF1720CC2FB71A19004849B1 /* c172-afl-fcu-efis-profile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AF1720C92FB71A19004849B1 /* c172-afl-fcu-efis-profile.cpp */; };
 		AF1720CE2FB71A19004849B1 /* c172-afl-fcu-efis-profile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AF1720C92FB71A19004849B1 /* c172-afl-fcu-efis-profile.cpp */; };
@@ -279,6 +283,10 @@
 		A2200000000000000000A0FE /* a220-fcu-efis-profile.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "a220-fcu-efis-profile.h"; sourceTree = "<group>"; };
 		A2200000000000000000C0FC /* a220-fmc-profile.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "a220-fmc-profile.cpp"; sourceTree = "<group>"; };
 		A2200000000000000000C0FE /* a220-fcu-efis-profile.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "a220-fcu-efis-profile.cpp"; sourceTree = "<group>"; };
+		B5800000000000000000A0FD /* b58-pap3-mcp-profile.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "b58-pap3-mcp-profile.h"; sourceTree = "<group>"; };
+		B5800000000000000000A0FE /* b58-fcu-efis-profile.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "b58-fcu-efis-profile.h"; sourceTree = "<group>"; };
+		B5800000000000000000C0FD /* b58-pap3-mcp-profile.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "b58-pap3-mcp-profile.cpp"; sourceTree = "<group>"; };
+		B5800000000000000000C0FE /* b58-fcu-efis-profile.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "b58-fcu-efis-profile.cpp"; sourceTree = "<group>"; };
 		AF1720C82FB71A19004849B1 /* c172-afl-fcu-efis-profile.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "c172-afl-fcu-efis-profile.h"; sourceTree = "<group>"; };
 		AF1720C92FB71A19004849B1 /* c172-afl-fcu-efis-profile.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "c172-afl-fcu-efis-profile.cpp"; sourceTree = "<group>"; };
 		AF9A28C82FB71A19004849B1 /* pa28-fcu-efis-profile.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "pa28-fcu-efis-profile.h"; sourceTree = "<group>"; };
@@ -925,6 +933,8 @@
 				F6C69C0D2EC0DAE300BFDA65 /* laminar-737-fcu-efis-profile.cpp */,
 				A2200000000000000000A0FE /* a220-fcu-efis-profile.h */,
 				A2200000000000000000C0FE /* a220-fcu-efis-profile.cpp */,
+				B5800000000000000000A0FE /* b58-fcu-efis-profile.h */,
+				B5800000000000000000C0FE /* b58-fcu-efis-profile.cpp */,
 				AF1720C82FB71A19004849B1 /* c172-afl-fcu-efis-profile.h */,
 				AF1720C92FB71A19004849B1 /* c172-afl-fcu-efis-profile.cpp */,
 				F67B29C82FB71A19004849B1 /* c172-laminar-fcu-efis-profile.h */,
@@ -973,6 +983,8 @@
 				F6C6E02C2E8D5DAA00558F46 /* laminar-737-pap3-mcp-profile.cpp */,
 				F6C6E02D2E8D5DAA00558F46 /* zibo-pap3-mcp-profile.h */,
 				F6C6E02E2E8D5DAA00558F46 /* zibo-pap3-mcp-profile.cpp */,
+				B5800000000000000000A0FD /* b58-pap3-mcp-profile.h */,
+				B5800000000000000000C0FD /* b58-pap3-mcp-profile.cpp */,
 				F6BBFF042ED741B900FE9D7F /* ff777-pap3-mcp-profile.h */,
 				F6BBFF052ED741B900FE9D7F /* ff777-pap3-mcp-profile.cpp */,
 				F6BBFF062ED741B900FE9D7F /* rotatemd11-pap3-mcp-profile.h */,
@@ -1196,6 +1208,7 @@
 				F6C6E0332E8D5DAA00558F46 /* product-pap3-mcp.cpp in Sources */,
 				838AA8B52EEF2918006444F6 /* ff350-fcu-efis-profile.cpp in Sources */,
 				F6C6E0342E8D5DAA00558F46 /* laminar-737-pap3-mcp-profile.cpp in Sources */,
+				B5800000000000000000B0F3 /* b58-pap3-mcp-profile.cpp in Sources */,
 				F6C6E0352E8D5DAA00558F46 /* zibo-pap3-mcp-profile.cpp in Sources */,
 				F60ABAEA2FBE134D001C91EF /* jar330-fmc-profile.cpp in Sources */,
 				F60ABADA2FBDF04F001C91EF /* xcrafts-ejets-fmc-profile.cpp in Sources */,
@@ -1243,6 +1256,7 @@
 				F6C2086A2FC9702A006973EE /* rotatemd11-fcu-efis-profile.cpp in Sources */,
 				F67B29CC2FB71A19004849B1 /* c172-laminar-fcu-efis-profile.cpp in Sources */,
 				A2200000000000000000B0F1 /* a220-fcu-efis-profile.cpp in Sources */,
+				B5800000000000000000B0F1 /* b58-fcu-efis-profile.cpp in Sources */,
 				AF1720CC2FB71A19004849B1 /* c172-afl-fcu-efis-profile.cpp in Sources */,
 				AF9A28CC2FB71A19004849B1 /* pa28-fcu-efis-profile.cpp in Sources */,
 				F67B29CD2FB71A19004849B1 /* cis-seneca-fcu-efis-profile.cpp in Sources */,
@@ -1327,6 +1341,7 @@
 				F635AD4B2E05819E005D6CDC /* usbdevice_mac.cpp in Sources */,
 				F67B29CE2FB71A19004849B1 /* c172-laminar-fcu-efis-profile.cpp in Sources */,
 				A2200000000000000000B0F2 /* a220-fcu-efis-profile.cpp in Sources */,
+				B5800000000000000000B0F2 /* b58-fcu-efis-profile.cpp in Sources */,
 				AF1720CE2FB71A19004849B1 /* c172-afl-fcu-efis-profile.cpp in Sources */,
 				AF9A28CE2FB71A19004849B1 /* pa28-fcu-efis-profile.cpp in Sources */,
 				F67B29CF2FB71A19004849B1 /* cis-seneca-fcu-efis-profile.cpp in Sources */,
@@ -1408,6 +1423,7 @@
 				F603CF712FCDA132005DF928 /* toliss-rmp-profile.cpp in Sources */,
 				F603CF722FCDA132005DF928 /* product-rmp.cpp in Sources */,
 				F6C6E0312E8D5DAA00558F46 /* laminar-737-pap3-mcp-profile.cpp in Sources */,
+				B5800000000000000000B0F4 /* b58-pap3-mcp-profile.cpp in Sources */,
 				F6C2086B2FC9702A006973EE /* rotatemd11-fcu-efis-profile.cpp in Sources */,
 				F6C6E0322E8D5DAA00558F46 /* zibo-pap3-mcp-profile.cpp in Sources */,
 				F6A0E6F32FDCA55200BEC19C /* xplane-bindings.cpp in Sources */,

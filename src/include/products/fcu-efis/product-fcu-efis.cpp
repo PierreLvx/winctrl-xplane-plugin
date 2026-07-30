@@ -5,11 +5,11 @@
 #include "dataref.h"
 #include "plugins-menu.h"
 #include "profiles/a220-fcu-efis-profile.h"
+#include "profiles/b58-fcu-efis-profile.h"
 #include "profiles/c172-afl-fcu-efis-profile.h"
 #include "profiles/c172-laminar-fcu-efis-profile.h"
 #include "profiles/cis-seneca-fcu-efis-profile.h"
 #include "profiles/cl650-fcu-efis-profile.h"
-#include "profiles/q4xp-fcu-efis-profile.h"
 #include "profiles/ff350-fcu-efis-profile.h"
 #include "profiles/ff767-fcu-efis-profile.h"
 #include "profiles/ff777-fcu-efis-profile.h"
@@ -20,6 +20,7 @@
 #include "profiles/laminar-737-fcu-efis-profile.h"
 #include "profiles/laminar-a333-fcu-efis-profile.h"
 #include "profiles/pa28-fcu-efis-profile.h"
+#include "profiles/q4xp-fcu-efis-profile.h"
 #include "profiles/rotatemd11-fcu-efis-profile.h"
 #include "profiles/sparky744-fcu-efis-profile.h"
 #include "profiles/stratosphere77w-fcu-efis-profile.h"
@@ -96,6 +97,9 @@ void ProductFCUEfis::setProfileForCurrentAircraft() {
         profileReady = true;
     } else if (PA28FCUEfisProfile::IsEligible()) {
         profile = new PA28FCUEfisProfile(this);
+        profileReady = true;
+    } else if (B58FCUEfisProfile::IsEligible()) {
+        profile = new B58FCUEfisProfile(this);
         profileReady = true;
     } else if (LaminarA333FCUEfisProfile::IsEligible()) {
         profile = new LaminarA333FCUEfisProfile(this);
