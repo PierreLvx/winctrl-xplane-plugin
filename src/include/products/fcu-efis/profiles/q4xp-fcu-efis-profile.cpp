@@ -131,7 +131,7 @@ void Q4XPFCUEfisProfile::updateDisplayData(FCUDisplayData &data) {
     float alt = dm->getCached<float>("sim/cockpit/autopilot/altitude");
     {
         std::ostringstream oss;
-        oss << std::setw(5) << std::setfill('0') << static_cast<int>(std::round(alt));
+        oss << std::internal << std::setw(5) << std::setfill('0') << static_cast<int>(std::round(alt));
         data.altitude = oss.str();
     }
     data.altManaged = false;

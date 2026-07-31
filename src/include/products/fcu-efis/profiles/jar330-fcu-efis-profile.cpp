@@ -240,7 +240,7 @@ void JAR330FCUEfisProfile::updateDisplayData(FCUDisplayData &data) {
     // Altitude display
     float altitude = datarefManager->getCached<float>("sim/cockpit/autopilot/altitude");
     std::ostringstream altSs;
-    altSs << std::setw(5) << std::setfill('0') << static_cast<int>(altitude);
+    altSs << std::internal << std::setw(5) << std::setfill('0') << static_cast<int>(altitude);
     data.altitude = altSs.str();
 
     // Vertical speed display
