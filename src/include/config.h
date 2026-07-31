@@ -1,3 +1,6 @@
+#ifndef CONFIG_H
+#define CONFIG_H
+
 #if defined(_WIN32) || defined(_WIN64)
 #include <windows.h>
 #endif
@@ -15,3 +18,5 @@
 #define WINCTRL_VENDOR_ID 0x4098
 
 #include "logger.hpp"
+
+#endif

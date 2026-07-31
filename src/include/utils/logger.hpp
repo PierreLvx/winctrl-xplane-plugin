@@ -1,6 +1,8 @@
 #ifndef LOGGER_HPP
 #define LOGGER_HPP
 
+#include "config.h"
+
 #include <atomic>
 #include <cstdarg>
 #include <cstdio>
@@ -10,10 +12,6 @@
 #include <thread>
 #include <XPLMProcessing.h>
 #include <XPLMUtilities.h>
-
-#ifndef PRODUCT_NAME
-#define PRODUCT_NAME "unknown"
-#endif
 
 enum class LogLevel {
     VERBOSE = 0,
