@@ -203,7 +203,8 @@ const std::unordered_map<uint16_t, FCUEfisButtonDef> &ZiboFCUEfisProfile::button
         {26, {"ALT 1000", "custom_set_altitude_mode", FCUEfisDatarefType::SET_VALUE, 1000.0}},
 
         // EFIS Left (Captain) buttons (32-63)
-        {32, {"L_FD", "laminar/B738/autopilot/flight_director_pos,laminar/B738/autopilot/flight_director_toggle,laminar/B738/autopilot/flight_director_toggle", FCUEfisDatarefType::SET_VALUE_USING_COMMANDS, 1.0}},
+        // FD is a plain toggle; SET_VALUE_USING_COMMANDS with a fixed target could only ever switch it on
+        {32, {"L_FD", "laminar/B738/autopilot/flight_director_toggle", FCUEfisDatarefType::EXECUTE_CMD_ONCE}},
         {33, {"L_LS", "sim/instruments/EFIS_mode_up"}},
         {34, {"L_CSTR", "sim/instruments/EFIS_fix"}},
         {35, {"L_WPT", "sim/instruments/EFIS_fix"}},
@@ -241,7 +242,7 @@ const std::unordered_map<uint16_t, FCUEfisButtonDef> &ZiboFCUEfisProfile::button
         {61, {"L_2 VOR", "laminar/B738/EFIS_control/capt/vor2_off_pos,laminar/B738/EFIS_control/capt/vor2_off_dn,laminar/B738/EFIS_control/capt/vor2_off_up", FCUEfisDatarefType::SET_VALUE_USING_COMMANDS, 1.0}},
 
         // EFIS Right (FO) buttons (64-95)
-        {64, {"R_FD", "laminar/B738/autopilot/flight_director_fo_pos,laminar/B738/autopilot/flight_director_fo_toggle,laminar/B738/autopilot/flight_director_fo_toggle", FCUEfisDatarefType::SET_VALUE_USING_COMMANDS, 1.0}},
+        {64, {"R_FD", "laminar/B738/autopilot/flight_director_fo_toggle", FCUEfisDatarefType::EXECUTE_CMD_ONCE}},
         {65, {"R_LS", "sim/instruments/EFIS_copilot_mode_up"}},
         {66, {"R_CSTR", "sim/instruments/EFIS_copilot_fix"}},
         {67, {"R_WPT", "sim/instruments/EFIS_copilot_fix"}},
