@@ -45,7 +45,7 @@ bool ZiboPDCProfile::IsEligible() {
 }
 
 const std::unordered_map<PDCButtonIndex3N3M, PDCButtonDef> &ZiboPDCProfile::buttonDefs() const {
-    const std::string pilotSide = product->deviceVariant == PDCDeviceVariant::VARIANT_3N_CAPTAIN || product->deviceVariant == PDCDeviceVariant::VARIANT_3M_CAPTAIN ? "capt" : "fo";
+    const std::string pilotSide = product->isCaptainSide() ? "capt" : "fo";
     const std::string pilotOrCopilot = pilotSide == "capt" ? "pilot" : "copilot";
     const std::string cptOrFo = pilotSide == "capt" ? "cpt" : "fo";
     static std::unordered_map<PDCDeviceVariant, std::unordered_map<PDCButtonIndex3N3M, PDCButtonDef>> cache;

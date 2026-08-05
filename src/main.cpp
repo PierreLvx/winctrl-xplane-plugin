@@ -112,6 +112,11 @@ PLUGIN_API int XPluginStart(char *name, char *sig, char *desc) {
         }
     });
 
+    // Devices switched off in a previous session are never claimed, so they
+    // never add their own submenu; this puts the stub back that switches them
+    // on again.
+    PluginsMenu::getInstance()->syncDisabledDeviceItems();
+
     Logger::getInstance()->info("Plugin started (version %s)\n", VERSION);
 
     return 1;

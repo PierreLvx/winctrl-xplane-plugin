@@ -67,6 +67,8 @@ bool ProductECAM::connect() {
     menuItemId = PluginsMenu::getInstance()->addItem(
         classIdentifier(),
         std::vector<MenuItem>{
+            PluginsMenu::deviceEnabledItem(productId),
+            MenuItem::Separator(),
             {.name = "Identify", .content = [this](int menuId) {
                  setLedBrightness(ECAMLed::BACKLIGHT, 128);
                  setLedBrightness(ECAMLed::EMER_CANC_BRIGHTNESS, 128);

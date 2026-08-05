@@ -32,6 +32,15 @@ struct InputEvent {
         int reportLength;
 };
 
+// A group of product IDs the user can switch off in the plugins menu, so that
+// another tool (MobiFlight, SimAppPro) can own the hardware instead.
+struct DeviceFamily {
+        // Stored in preferences.ini; must stay stable across releases.
+        const char *preferenceKey;
+        const char *name;
+        std::vector<uint16_t> productIds;
+};
+
 class USBDevice {
     private:
         uint8_t *inputBuffer = nullptr;
@@ -127,6 +136,15 @@ class USBDevice {
         int getDisplayUpdateFrameInterval(int minWaitFrames = 0);
 
         static USBDevice *Device(HIDDeviceHandle hidDevice, uint16_t vendorId, uint16_t productId, std::string vendorName, std::string productName);
+
+        // A device the user switched off is never claimed: Device() refuses to
+        // create it, so it gets no HID handle, no menu entry and no input or
+        // display traffic. Unknown product IDs count as enabled.
+        static const std::vector<DeviceFamily> &DeviceFamilies();
+        static const DeviceFamily *FamilyForProduct(uint16_t productId);
+        static bool IsProductEnabled(uint16_t productId);
+        static bool IsFamilyEnabled(const DeviceFamily &family);
+        static void SetFamilyEnabled(const DeviceFamily &family, bool enabled);
 };
 
 #endif

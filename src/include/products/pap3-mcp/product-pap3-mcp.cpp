@@ -110,6 +110,8 @@ bool ProductPAP3MCP::connect() {
         menuItemId = PluginsMenu::getInstance()->addItem(
             classIdentifier(),
             std::vector<MenuItem>{
+                PluginsMenu::deviceEnabledItem(productId),
+                MenuItem::Separator(),
                 {.name = "Identify", .content = [this](int menuId) {
                      setLedBrightness(PAP3MCPLed::BACKLIGHT, 255);
                      setLedBrightness(PAP3MCPLed::LCD_BACKLIGHT, 255);

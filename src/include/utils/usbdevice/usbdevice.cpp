@@ -15,15 +15,76 @@
 #include "product-ursa-minor-throttle.h"
 #include "xplane-bindings.h"
 
+#include <algorithm>
 #include <set>
 #include <XPLMUtilities.h>
 
 // The desktop app overrides this function to get notified of button presses
 __attribute__((weak)) void notifyButtonPressed(uint16_t buttonId, uint16_t productId) {}
 
+// Ordered as the product ID switch in Device() below, so the two stay easy to
+// compare. Names match classIdentifier() of the device they cover.
+static const std::vector<DeviceFamily> deviceFamilies = {
+    {"UrsaMinorJoystickEnabled", "Ursa Minor Joystick", {0xBC27, 0xBC28, 0xBC2A, 0xBC29}},
+    {"OrionJoystickEnabled", "Orion Joystick", {0xBEA8}},
+    {"MCDUEnabled", "FMC (MCDU)", {0xBB36, 0xBB3E, 0xBB3A}},
+    {"PFP3NEnabled", "FMC (PFP3N)", {0xBB35, 0xBB39, 0xBB3D}},
+    {"PFP4Enabled", "FMC (PFP4)", {0xBB38, 0xBB40, 0xBB3C}},
+    {"PFP7Enabled", "FMC (PFP7)", {0xBB37, 0xBB3F, 0xBB3B}},
+    {"FCUEfisEnabled", "FCU-EFIS", {0xBB10, 0xBC1E, 0xBC1D, 0xBA01}},
+    {"PAP3MCPEnabled", "PAP3-MCP", {0xBF0F}},
+    {"PDCEnabled", "PDC", {0xBB61, 0xBB62, 0xBB51, 0xBB52}},
+    {"ECAMEnabled", "ECAM", {0xBB70}},
+    {"AGPEnabled", "AGP Metal", {0xBB80}},
+    {"TCASEnabled", "TCAS", {0xBB81}},
+    {"RMPEnabled", "RMP", {0xBB83, 0xBB84, 0xBB85}},
+    {"UrsaMinorThrottleEnabled", "Ursa Minor Throttle", {0xB920, 0xB930}},
+    {"NWSEnabled", "NWS", {0xB961}},
+    {"OrionThrottleEnabled", "Orion Throttle", {0xBD64}},
+};
+
+// Product IDs already reported as disabled; enumeration retries every few
+// seconds, so without this the log fills up. Cleared when a family is toggled.
+static std::set<uint16_t> loggedDisabledProducts;
+
+const std::vector<DeviceFamily> &USBDevice::DeviceFamilies() {
+    return deviceFamilies;
+}
+
+const DeviceFamily *USBDevice::FamilyForProduct(uint16_t productId) {
+    for (const auto &family : deviceFamilies) {
+        if (std::find(family.productIds.begin(), family.productIds.end(), productId) != family.productIds.end()) {
+            return &family;
+        }
+    }
+
+    return nullptr;
+}
+
+bool USBDevice::IsFamilyEnabled(const DeviceFamily &family) {
+    return AppState::getInstance()->readPreference(family.preferenceKey, "enabled") != "disabled";
+}
+
+void USBDevice::SetFamilyEnabled(const DeviceFamily &family, bool enabled) {
+    AppState::getInstance()->writePreference(family.preferenceKey, enabled ? "enabled" : "disabled");
+    loggedDisabledProducts.clear();
+}
+
+bool USBDevice::IsProductEnabled(uint16_t productId) {
+    const DeviceFamily *family = FamilyForProduct(productId);
+    return family == nullptr || IsFamilyEnabled(*family);
+}
+
 USBDevice *USBDevice::Device(HIDDeviceHandle hidDevice, uint16_t vendorId, uint16_t productId, std::string vendorName, std::string productName) {
     if (vendorId != WINCTRL_VENDOR_ID) {
         Logger::getInstance()->debug("Vendor ID mismatch: 0x%04X != 0x%04X\n", vendorId, WINCTRL_VENDOR_ID);
+        return nullptr;
+    }
+
+    if (!IsProductEnabled(productId)) {
+        if (loggedDisabledProducts.insert(productId).second) {
+            Logger::getInstance()->info("Device 0x%04X (%s) is switched off in the " FRIENDLY_NAME " menu, leaving it to other software\n", productId, productName.c_str());
+        }
         return nullptr;
     }
 

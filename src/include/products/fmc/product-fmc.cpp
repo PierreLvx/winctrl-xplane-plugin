@@ -223,6 +223,8 @@ bool ProductFMC::connect() {
         setLedBrightness(FMCLed::PFP_FAIL, 1);
 
         std::vector<MenuItem> menuItems = {
+            PluginsMenu::deviceEnabledItem(productId),
+            MenuItem::Separator(),
             {.name = "Identify", .content = [this](int menuId) {
                  setLedBrightness(FMCLed::OVERALL_LEDS_BRIGHTNESS, 255);
                  setAllLedsEnabled(true);

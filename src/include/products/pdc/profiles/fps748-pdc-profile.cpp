@@ -36,7 +36,7 @@ bool FPS748PDCProfile::IsEligible() {
 const std::unordered_map<PDCButtonIndex3N3M, PDCButtonDef> &FPS748PDCProfile::buttonDefs() const {
     bool isSSG = IsSSGVersion();
     std::string prefix = isSSG ? "SSG" : "FPS";
-    bool isCaptain = product->deviceVariant == PDCDeviceVariant::VARIANT_3N_CAPTAIN || product->deviceVariant == PDCDeviceVariant::VARIANT_3M_CAPTAIN;
+    bool isCaptain = product->isCaptainSide();
     std::string side = isCaptain ? "pilot" : "copilot";
 
     int cacheKey = (static_cast<int>(product->deviceVariant) << 1) | (isSSG ? 1 : 0);
@@ -158,7 +158,7 @@ void FPS748PDCProfile::changeBaro() {
         return;
     }
 
-    bool isCaptain = product->deviceVariant == PDCDeviceVariant::VARIANT_3N_CAPTAIN || product->deviceVariant == PDCDeviceVariant::VARIANT_3M_CAPTAIN;
+    bool isCaptain = product->isCaptainSide();
     const char *dataref = isCaptain ? "FPS/PFD/baro_act" : "FPS/PFD/baro_act2";
     auto dm = Dataref::getInstance();
     int current = dm->get<int>(dataref);

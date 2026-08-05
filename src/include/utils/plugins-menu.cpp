@@ -2,6 +2,8 @@
 
 #include "appstate.h"
 #include "config.h"
+#include "usbcontroller.h"
+#include "usbdevice.h"
 
 #include <XPLMPlanes.h>
 #include <XPLMUtilities.h>
@@ -353,6 +355,9 @@ void PluginsMenu::clearAllItems() {
         submenus.clear();
         itemToMenuId.clear();
         submenuChildren.clear();
+        // The stubs are gone with everything else; their ids must not be reused
+        // for removal or they would take a freshly added item down instead.
+        disabledDeviceItemIds.clear();
         nextItemId = 0;
 
         // Re-add persistent items and submenus
@@ -361,6 +366,48 @@ void PluginsMenu::clearAllItems() {
             const auto &callbackOrSubmenu = std::get<2>(item);
             addPersistentItem(name, callbackOrSubmenu);
         }
+
+        syncDisabledDeviceItems();
+    }
+}
+
+MenuItem PluginsMenu::deviceEnabledItem(uint16_t productId) {
+    return {.name = "Enabled", .checked = true, .content = [productId](int itemId) {
+                const DeviceFamily *family = USBDevice::FamilyForProduct(productId);
+                if (family == nullptr) {
+                    return;
+                }
+
+                USBDevice::SetFamilyEnabled(*family, false);
+                // Takes this item's own submenu down with the device, hence the
+                // stub added right after.
+                USBController::getInstance()->releaseDisabledDevices();
+                PluginsMenu::getInstance()->syncDisabledDeviceItems();
+            }};
+}
+
+void PluginsMenu::syncDisabledDeviceItems() {
+    for (int itemId : disabledDeviceItemIds) {
+        removeItem(itemId);
+    }
+    disabledDeviceItemIds.clear();
+
+    // A DeviceFamily reference stays valid: the table has static storage duration.
+    for (const auto &family : USBDevice::DeviceFamilies()) {
+        if (USBDevice::IsFamilyEnabled(family)) {
+            continue;
+        }
+
+        disabledDeviceItemIds.push_back(addItem(family.name,
+            std::vector<MenuItem>{
+                {.name = "Enable", .content = [&family](int itemId) {
+                     USBDevice::SetFamilyEnabled(family, true);
+                     // Drops this stub; the device adds its own submenu once
+                     // enumeration picks it up again.
+                     PluginsMenu::getInstance()->syncDisabledDeviceItems();
+                     USBController::getInstance()->connectAllDevices();
+                 }},
+            }));
     }
 }
 
@@ -380,6 +427,7 @@ void PluginsMenu::teardown() {
     submenus.clear();
     itemToMenuId.clear();
     submenuChildren.clear();
+    disabledDeviceItemIds.clear();
     nextItemId = 0;
 }
 

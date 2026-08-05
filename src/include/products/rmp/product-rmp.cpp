@@ -124,6 +124,8 @@ bool ProductRMP::connect() {
     menuItemId = PluginsMenu::getInstance()->addItem(
         classIdentifier(),
         std::vector<MenuItem>{
+            PluginsMenu::deviceEnabledItem(productId),
+            MenuItem::Separator(),
             {.name = "Identify", .content = [this](int menuId) {
                  setLedBrightness(RMPLed::BACKLIGHT, 128);
                  setLedBrightness(RMPLed::LCD_BRIGHTNESS, 255);

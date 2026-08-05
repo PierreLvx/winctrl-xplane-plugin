@@ -85,6 +85,9 @@ class USBController {
         bool anyProfileReady();
         void connectAllDevices();
         void disconnectAllDevices();
+        // Releases devices the user just switched off, without touching the
+        // others. Newly switched on ones return via connectAllDevices().
+        void releaseDisabledDevices();
 };
 
 #endif

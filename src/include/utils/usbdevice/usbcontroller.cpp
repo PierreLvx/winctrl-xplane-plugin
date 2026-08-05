@@ -18,6 +18,26 @@ void USBController::connectAllDevices() {
     });
 }
 
+void USBController::releaseDisabledDevices() {
+    std::lock_guard<std::mutex> lock(devicesMutex);
+    for (auto it = devices.begin(); it != devices.end();) {
+        USBDevice *device = *it;
+        if (USBDevice::IsProductEnabled(device->productId)) {
+            ++it;
+            continue;
+        }
+
+        Logger::getInstance()->info("Releasing %s (productId: 0x%04X), it was switched off in the " FRIENDLY_NAME " menu\n", device->productName.c_str(), device->productId);
+        device->blackout();
+        device->disconnect();
+        // Drops platform-side path/pending tracking, or the device could never
+        // be re-added after being switched back on.
+        forgetDevice(device);
+        delete device;
+        it = devices.erase(it);
+    }
+}
+
 void USBController::disconnectAllDevices() {
     std::lock_guard<std::mutex> lock(devicesMutex);
     for (auto ptr : devices) {

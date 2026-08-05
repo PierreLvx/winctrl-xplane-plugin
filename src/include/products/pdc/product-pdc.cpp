@@ -12,12 +12,27 @@
 #include <algorithm>
 #include <cmath>
 
-ProductPDC::ProductPDC(HIDDeviceHandle hidDevice, uint16_t vendorId, uint16_t productId, std::string vendorName, std::string productName, PDCDeviceVariant variant, unsigned char identifierByte) : USBDevice(hidDevice, vendorId, productId, vendorName, productName), identifierByte(identifierByte), deviceVariant(variant) {
+namespace {
+    bool IsCaptainVariant(PDCDeviceVariant variant) {
+        return variant == PDCDeviceVariant::VARIANT_3N_CAPTAIN || variant == PDCDeviceVariant::VARIANT_3M_CAPTAIN;
+    }
+}
+
+ProductPDC::ProductPDC(HIDDeviceHandle hidDevice, uint16_t vendorId, uint16_t productId, std::string vendorName, std::string productName, PDCDeviceVariant variant, unsigned char identifierByte) : USBDevice(hidDevice, vendorId, productId, vendorName, productName), identifierByte(identifierByte), hardwareVariant(variant), deviceVariant(variant) {
     profile = nullptr;
     menuItemId = -1;
     lastButtonStateLo = 0;
     lastButtonStateHi = 0;
     pressedButtonIndices = {};
+
+    // The product ID only presets the side; a stored menu choice always wins, so
+    // a unit left on L in SimAppPro can still drive the first officer side.
+    std::string variantPreference = AppState::getInstance()->readPreference(variantPreferenceKey(), IsCaptainVariant(variant) ? "captain" : "first_officer");
+    if (variantPreference == "first_officer") {
+        deviceVariant = isHardware3N() ? PDCDeviceVariant::VARIANT_3N_FIRSTOFFICER : PDCDeviceVariant::VARIANT_3M_FIRSTOFFICER;
+    } else {
+        deviceVariant = isHardware3N() ? PDCDeviceVariant::VARIANT_3N_CAPTAIN : PDCDeviceVariant::VARIANT_3M_CAPTAIN;
+    }
 
     connect();
 }
@@ -28,14 +43,49 @@ ProductPDC::~ProductPDC() {
 
     PluginsMenu::getInstance()->removeItem(menuItemId);
 
-    if (profile) {
-        delete profile;
-        profile = nullptr;
-    }
+    unloadProfile();
 }
 
 const char *ProductPDC::classIdentifier() {
+    switch (hardwareVariant) {
+        case PDCDeviceVariant::VARIANT_3N_CAPTAIN:
+            return "PDC 3N (L)";
+        case PDCDeviceVariant::VARIANT_3N_FIRSTOFFICER:
+            return "PDC 3N (R)";
+        case PDCDeviceVariant::VARIANT_3M_CAPTAIN:
+            return "PDC 3M (L)";
+        case PDCDeviceVariant::VARIANT_3M_FIRSTOFFICER:
+            return "PDC 3M (R)";
+    }
+
     return "PDC";
+}
+
+std::string ProductPDC::positionName() const {
+    switch (hardwareVariant) {
+        case PDCDeviceVariant::VARIANT_3N_CAPTAIN:
+            return "3N-L";
+        case PDCDeviceVariant::VARIANT_3N_FIRSTOFFICER:
+            return "3N-R";
+        case PDCDeviceVariant::VARIANT_3M_CAPTAIN:
+            return "3M-L";
+        case PDCDeviceVariant::VARIANT_3M_FIRSTOFFICER:
+            return "3M-R";
+    }
+
+    return "3N-L";
+}
+
+std::string ProductPDC::variantPreferenceKey() const {
+    return std::string("PDCVariant") + positionName();
+}
+
+bool ProductPDC::isCaptainSide() const {
+    return IsCaptainVariant(deviceVariant);
+}
+
+bool ProductPDC::isHardware3N() const {
+    return hardwareVariant == PDCDeviceVariant::VARIANT_3N_CAPTAIN || hardwareVariant == PDCDeviceVariant::VARIANT_3N_FIRSTOFFICER;
 }
 
 const char *ProductPDC::activeProfileName() const {
@@ -64,6 +114,41 @@ void ProductPDC::setProfileForCurrentAircraft() {
     }
 }
 
+void ProductPDC::unloadProfile() {
+    profileReady = false;
+
+    if (profile) {
+        // Phased commands latch on CommandBegin, so a button that is still held
+        // has to be released on the profile that began it.
+        for (int hardwareButtonIndex : pressedButtonIndices) {
+            const PDCButtonDef *buttonDef = buttonDefForIndex(hardwareButtonIndex);
+            if (buttonDef) {
+                profile->buttonPressed(buttonDef, xplm_CommandEnd);
+            }
+        }
+
+        delete profile;
+        profile = nullptr;
+    }
+
+    pressedButtonIndices.clear();
+}
+
+void ProductPDC::setDeviceVariant(PDCDeviceVariant variant) {
+    if (deviceVariant == variant) {
+        return;
+    }
+
+    // The profiles bake the side into their dataref names and monitor them from
+    // their constructor, so the switch needs a fresh profile.
+    unloadProfile();
+
+    deviceVariant = variant;
+    AppState::getInstance()->writePreference(variantPreferenceKey(), isCaptainSide() ? "captain" : "first_officer");
+
+    setProfileForCurrentAircraft();
+}
+
 bool ProductPDC::connect() {
     if (!USBDevice::connect()) {
         return false;
@@ -76,6 +161,8 @@ bool ProductPDC::connect() {
     menuItemId = PluginsMenu::getInstance()->addItem(
         classIdentifier(),
         std::vector<MenuItem>{
+            PluginsMenu::deviceEnabledItem(productId),
+            MenuItem::Separator(),
             {.name = "Identify", .content = [this](int menuId) {
                  setLedBrightness(PDCLed::BACKLIGHT, 255);
                  AppState::getInstance()->executeAfter(1000, this, [this]() {
@@ -85,6 +172,18 @@ bool ProductPDC::connect() {
                      });
                  });
              }},
+            {.name = "Variant", .content = std::vector<MenuItem>{
+                                    {.name = "Captain", .checked = isCaptainSide(), .content = [this](int menuId) {
+                                         setDeviceVariant(isHardware3N() ? PDCDeviceVariant::VARIANT_3N_CAPTAIN : PDCDeviceVariant::VARIANT_3M_CAPTAIN);
+                                         PluginsMenu::getInstance()->uncheckSubmenuSiblings(menuId);
+                                         PluginsMenu::getInstance()->setItemChecked(menuId, true);
+                                     }},
+                                    {.name = "First officer", .checked = !isCaptainSide(), .content = [this](int menuId) {
+                                         setDeviceVariant(isHardware3N() ? PDCDeviceVariant::VARIANT_3N_FIRSTOFFICER : PDCDeviceVariant::VARIANT_3M_FIRSTOFFICER);
+                                         PluginsMenu::getInstance()->uncheckSubmenuSiblings(menuId);
+                                         PluginsMenu::getInstance()->setItemChecked(menuId, true);
+                                     }},
+                                }},
         });
 
     return true;
@@ -156,6 +255,20 @@ void ProductPDC::didReceiveData(int reportId, uint8_t *report, int reportLength)
     }
 }
 
+const PDCButtonDef *ProductPDC::buttonDefForIndex(uint16_t hardwareButtonIndex) const {
+    if (!profile) {
+        return nullptr;
+    }
+
+    bool is3N = isHardware3N();
+    auto &buttons = profile->buttonDefs();
+    auto it = std::find_if(buttons.begin(), buttons.end(), [hardwareButtonIndex, is3N](const auto &kv) {
+        return is3N ? kv.first.first == hardwareButtonIndex : kv.first.second == hardwareButtonIndex;
+    });
+
+    return it == buttons.end() ? nullptr : &it->second;
+}
+
 void ProductPDC::didReceiveButton(uint16_t hardwareButtonIndex, bool pressed, uint8_t count) {
     USBDevice::didReceiveButton(hardwareButtonIndex, pressed, count);
 
@@ -167,19 +280,8 @@ void ProductPDC::didReceiveButton(uint16_t hardwareButtonIndex, bool pressed, ui
         return;
     }
 
-    bool isDeviceVariant3N = deviceVariant == PDCDeviceVariant::VARIANT_3N_CAPTAIN || deviceVariant == PDCDeviceVariant::VARIANT_3N_FIRSTOFFICER;
-
-    auto &buttons = profile->buttonDefs();
-    auto it = std::find_if(buttons.begin(), buttons.end(), [hardwareButtonIndex, isDeviceVariant3N](const auto &kv) {
-        return isDeviceVariant3N ? kv.first.first == hardwareButtonIndex : kv.first.second == hardwareButtonIndex;
-    });
-
-    if (it == buttons.end()) {
-        return;
-    }
-
-    const PDCButtonDef *buttonDef = &it->second;
-    if (buttonDef->dataref.empty()) {
+    const PDCButtonDef *buttonDef = buttonDefForIndex(hardwareButtonIndex);
+    if (!buttonDef || buttonDef->dataref.empty()) {
         return;
     }
 

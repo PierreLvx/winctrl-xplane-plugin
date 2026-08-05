@@ -1,6 +1,7 @@
 #ifndef PLUGINS_MENU_H
 #define PLUGINS_MENU_H
 
+#include <cstdint>
 #include <functional>
 #include <map>
 #include <string>
@@ -40,6 +41,7 @@ class PluginsMenu {
         std::map<int, std::pair<XPLMMenuID, std::vector<MenuItem>>> submenus;  // itemId -> (submenuId, items)
         std::map<int, XPLMMenuID> itemToMenuId;                                // itemId -> menuId (for locating which menu an item belongs to)
         std::map<int, std::vector<int>> submenuChildren;                       // submenuId -> list of child itemIds
+        std::vector<int> disabledDeviceItemIds;                                // stub submenus of switched-off devices
 
         static void handleMenuAction(void *mRef, void *iRef);
         void ensureMenuExists();
@@ -57,6 +59,15 @@ class PluginsMenu {
         bool isItemChecked(int itemIndex);
         void clearAllItems();
         void teardown();
+
+        // The "Enabled" entry every device submenu ends with. Unchecking it
+        // releases the device, so other software (MobiFlight, SimAppPro) can
+        // drive it instead. Lives here rather than in USBDevice because the
+        // stresstest build shares usbdevice.h but has no menu SDK.
+        static MenuItem deviceEnabledItem(uint16_t productId);
+        // Rebuilds the stub submenus of switched-off devices. Those stubs are
+        // the only way back: an unclaimed device never adds a submenu itself.
+        void syncDisabledDeviceItems();
 };
 
 #endif

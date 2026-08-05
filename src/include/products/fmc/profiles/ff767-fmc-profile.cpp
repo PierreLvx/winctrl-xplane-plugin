@@ -49,10 +49,9 @@ const std::vector<std::string> &FlightFactor767FMCProfile::displayDatarefs() con
 
     return cache.try_emplace(product->deviceVariant,
                     std::vector<std::string>{
-                        "1-sim/" + cdu + "/display/symbols",        // 336 letters
-                        "1-sim/" + cdu + "/display/symbolsColor",   // 336 numbers
-                        "1-sim/" + cdu + "/display/symbolsEffects", // 336 numbers
-                        "1-sim/" + cdu + "/display/symbolsSize"     // 336 numbers
+                        "1-sim/" + cdu + "/display/symbols",      // 336 chars (14 lines x 24)
+                        "1-sim/" + cdu + "/display/symbolsColor", // 336 numbers, 0-7
+                        "1-sim/" + cdu + "/display/symbolsSize"   // 336 numbers, 0 = large, 1 = small
                     })
         .first->second;
 }
@@ -162,27 +161,53 @@ const std::unordered_map<FMCKey, const FMCButtonDef *> &FlightFactor767FMCProfil
     return it->second;
 }
 
+// Palette taken from the 757767Avionics plugin itself: the CDU colour index selects
+// from a fixed 8-entry table, identical in the 3D display renderer and in the
+// remote-CDU HTML output. Index 6 is amber in the cockpit (the web output uses light
+// magenta there, the cockpit wins).
 const std::map<char, FMCTextColor> &FlightFactor767FMCProfile::colorMap() const {
     static const std::map<char, FMCTextColor> colMap = {
-        {0, FMCTextColor::COLOR_WHITE},
-        {1, FMCTextColor::COLOR_WHITE},
-        {2, FMCTextColor::COLOR_MAGENTA},
-        {3, FMCTextColor::COLOR_GREEN},
-        {4, FMCTextColor::COLOR_CYAN},
-        {5, FMCTextColor::COLOR_GREY},
-        {6, FMCTextColor::withBackgroundColor(FMCTextColor::COLOR_WHITE, FMCTextColor::COLOR_GREY)},
+        {0, FMCTextColor::COLOR_BLACK},
+        {1, FMCTextColor::COLOR_CYAN},
+        {2, FMCTextColor::COLOR_RED},
+        {3, FMCTextColor::COLOR_YELLOW},
+        {4, FMCTextColor::COLOR_GREEN},
+        {5, FMCTextColor::COLOR_MAGENTA},
+        {6, FMCTextColor::COLOR_AMBER},
+        {7, FMCTextColor::COLOR_WHITE},
     };
     return colMap;
 }
 
+// The CDU stores its non-ASCII glyphs as control codes and publishes those raw in
+// symbols, so they have to be expanded back to UTF-8 here. Codes are the aircraft's
+// own (setLine encodes them on the way in, DetachMetaFromCDUChar decodes them for the
+// remote CDU). Delta (0x6E) and hexagon (0x6F) cannot be recovered: the dataref
+// publisher runs every character through toupper, which turns them into N and O.
 void FlightFactor767FMCProfile::mapCharacter(std::vector<uint8_t> *buffer, uint8_t character, bool isFontSmall) {
     switch (character) {
-        case '#':
+        case 0x1C:
+            buffer->insert(buffer->end(), FMCSpecialCharacter::DEGREES.begin(), FMCSpecialCharacter::DEGREES.end());
+            break;
+
+        case 0x1D:
             buffer->insert(buffer->end(), FMCSpecialCharacter::OUTLINED_SQUARE.begin(), FMCSpecialCharacter::OUTLINED_SQUARE.end());
             break;
 
-        case '*':
-            buffer->insert(buffer->end(), FMCSpecialCharacter::DEGREES.begin(), FMCSpecialCharacter::DEGREES.end());
+        case 0x1E:
+            buffer->insert(buffer->end(), FMCSpecialCharacter::ARROW_DOWN.begin(), FMCSpecialCharacter::ARROW_DOWN.end());
+            break;
+
+        case 0x1F:
+            buffer->insert(buffer->end(), FMCSpecialCharacter::ARROW_RIGHT.begin(), FMCSpecialCharacter::ARROW_RIGHT.end());
+            break;
+
+        case 0x5E:
+            buffer->insert(buffer->end(), FMCSpecialCharacter::ARROW_UP.begin(), FMCSpecialCharacter::ARROW_UP.end());
+            break;
+
+        case 0x5F:
+            buffer->insert(buffer->end(), FMCSpecialCharacter::ARROW_LEFT.begin(), FMCSpecialCharacter::ARROW_LEFT.end());
             break;
 
         default:
@@ -199,9 +224,8 @@ void FlightFactor767FMCProfile::updatePage(std::vector<std::vector<char>> &page)
     std::vector<unsigned char> symbols = datarefManager->getCached<std::vector<unsigned char>>(("1-sim/" + cdu + "/display/symbols").c_str());
     std::vector<int> colors = datarefManager->getCached<std::vector<int>>(("1-sim/" + cdu + "/display/symbolsColor").c_str());
     std::vector<int> sizes = datarefManager->getCached<std::vector<int>>(("1-sim/" + cdu + "/display/symbolsSize").c_str());
-    std::vector<int> effects = datarefManager->getCached<std::vector<int>>(("1-sim/" + cdu + "/display/symbolsEffects").c_str());
 
-    if (symbols.size() < FlightFactor767FMCProfile::DataLength || colors.size() < FlightFactor767FMCProfile::DataLength || sizes.size() < FlightFactor767FMCProfile::DataLength || effects.size() < FlightFactor767FMCProfile::DataLength) {
+    if (symbols.size() < FlightFactor767FMCProfile::DataLength || colors.size() < FlightFactor767FMCProfile::DataLength || sizes.size() < FlightFactor767FMCProfile::DataLength) {
         return;
     }
 
@@ -220,15 +244,13 @@ void FlightFactor767FMCProfile::updatePage(std::vector<std::vector<char>> &page)
 
             unsigned char color = static_cast<unsigned char>(colors[index]);
             unsigned char fontSize = static_cast<unsigned char>(sizes[index]);
-            unsigned char effect = static_cast<unsigned char>(effects[index]);
-            bool fontSmall = fontSize == 2;
 
-            if (effect == 1) {
-                // Inverted text
-                color = 6;
+            // 0 = large, 1 = small. The aircraft draws nothing for any other value.
+            if (fontSize > 1) {
+                continue;
             }
 
-            product->writeLineToPage(page, line, pos, std::string(1, symbol), color, fontSmall);
+            product->writeLineToPage(page, line, pos, std::string(1, symbol), color, fontSize == 1);
         }
     }
 }

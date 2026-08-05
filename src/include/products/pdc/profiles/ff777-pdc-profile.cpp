@@ -41,7 +41,7 @@ bool FF777PDCProfile::IsEligible() {
 }
 
 const std::unordered_map<PDCButtonIndex3N3M, PDCButtonDef> &FF777PDCProfile::buttonDefs() const {
-    const std::string pilotSide = product->deviceVariant == PDCDeviceVariant::VARIANT_3N_CAPTAIN || product->deviceVariant == PDCDeviceVariant::VARIANT_3M_CAPTAIN ? "cpt" : "fo";
+    const std::string pilotSide = product->isCaptainSide() ? "cpt" : "fo";
     static std::unordered_map<PDCDeviceVariant, std::unordered_map<PDCButtonIndex3N3M, PDCButtonDef>> cache;
 
     return cache.try_emplace(product->deviceVariant,

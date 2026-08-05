@@ -170,6 +170,8 @@ bool ProductFCUEfis::connect() {
         menuItemId = PluginsMenu::getInstance()->addItem(
             classIdentifier(),
             std::vector<MenuItem>{
+                PluginsMenu::deviceEnabledItem(productId),
+                MenuItem::Separator(),
                 {.name = "Identify", .content = [this](int menuId) {
                      setLedBrightness(FCUEfisLed::BACKLIGHT, 180);
                      setLedBrightness(FCUEfisLed::SCREEN_BACKLIGHT, 180);
