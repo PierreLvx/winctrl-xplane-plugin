@@ -5,21 +5,13 @@ show_help() {
     cat << EOF
 Usage: ./build_platforms.sh [OPTIONS]
 
-Build script for the WINCTRL X-Plane plugin. Supports building for multiple platforms
-and development mode with live reload to X-Plane.
+Build script for the WINCTRL X-Plane plugin. Supports building for multiple platforms.
 
 OPTIONS:
     --help              Show this help message and exit
 
-    --dev[=PATH]        Enable development mode for faster iteration
-                        - Skips interactive prompts
-                        - Skips distribution bundle creation
-                        - Optionally specify X-Plane plugins path for live reload
-                        - Defaults to building Mac only (override with --platform)
-
     --platform=PLATFORM Build only the specified platform
                         Available platforms: mac, win, lin
-                        Can be combined with --dev for targeted development builds
 
 EXAMPLES:
     # Interactive mode (default) - prompts for platforms and options
@@ -31,21 +23,11 @@ EXAMPLES:
     # Build for Mac and Windows
     ./build_platforms.sh --platform=mac --platform=win
 
-    # Development mode with live reload to X-Plane (Mac only by default)
-    ./build_platforms.sh --dev="/Users/username/X-Plane 12/Resources/plugins"
-
-    # Development mode, will prompt for X-Plane path
-    ./build_platforms.sh --dev
-
-    # Development mode for Windows with live reload
-    ./build_platforms.sh --dev="/Users/username/X-Plane 12/Resources/plugins" --platform=win
-
     # Quick rebuild after changes (run after initial build)
     make -C build/mac
 
 NOTES:
     - The SDK/ folder must be present in the project root
-    - In dev mode, use 'make -C build/<platform>' for quick rebuilds
     - Linux builds require Docker
 
 EOF
@@ -53,23 +35,12 @@ EOF
 }
 
 # Check for flags
-DEV_MODE=false
-XPLANE_PLUGIN_PATH=""
 PLATFORM_OVERRIDE=""
 
 for arg in "$@"; do
     case $arg in
         --help)
             show_help
-            ;;
-        --dev)
-            DEV_MODE=true
-            shift
-            ;;
-        --dev=*)
-            DEV_MODE=true
-            XPLANE_PLUGIN_PATH="${arg#*=}"
-            shift
             ;;
         --platform=*)
             PLATFORM_OVERRIDE="${arg#*=}"
@@ -94,17 +65,7 @@ if [ ! -z "$PLATFORM_OVERRIDE" ]; then
     PLATFORMS="$PLATFORM_OVERRIDE"
 fi
 
-if [ "$DEV_MODE" = true ]; then
-    echo "Development mode enabled."
-    if [ -z "$XPLANE_PLUGIN_PATH" ]; then
-        echo "Enter X-Plane plugins path (e.g., /Users/username/X-Plane 12/Resources/plugins):"
-        read XPLANE_PLUGIN_PATH
-    fi
-    if [ -z "$PLATFORMS" ]; then
-        PLATFORMS="mac"
-    fi
-    CLEAN_BUILD="n"
-elif [ -z "$PLATFORMS" ]; then
+if [ -z "$PLATFORMS" ]; then
     echo "Building $PROJECT_NAME.xpl version $VERSION. Is this correct? (y/n) [default: y]:"
     read CONFIRM
 
@@ -144,22 +105,18 @@ JOBS=$(nproc 2>/dev/null || sysctl -n hw.logicalcpu 2>/dev/null || echo 4)
 
 echo "Building with SDK version $SDK_VERSION\n"
 
-if [ "$DEV_MODE" = false ]; then
-    echo "Clean build directory? (y/n) [default: n]:"
-    read CLEAN_BUILD
+echo "Clean build directory? (y/n) [default: n]:"
+read CLEAN_BUILD
 
-    if [ -z "$CLEAN_BUILD" ]; then
-        CLEAN_BUILD="n"
-    fi
+if [ -z "$CLEAN_BUILD" ]; then
+    CLEAN_BUILD="n"
+fi
 
-    echo "Upload to Google Drive after build? (y/n) [default: y]:"
-    read UPLOAD_TO_DRIVE
+echo "Upload to Google Drive after build? (y/n) [default: y]:"
+read UPLOAD_TO_DRIVE
 
-    if [ -z "$UPLOAD_TO_DRIVE" ]; then
-        UPLOAD_TO_DRIVE="y"
-    fi
-else
-    UPLOAD_TO_DRIVE="n"
+if [ -z "$UPLOAD_TO_DRIVE" ]; then
+    UPLOAD_TO_DRIVE="y"
 fi
 
 if [ "$CLEAN_BUILD" = "y" ]; then
@@ -175,13 +132,9 @@ for platform in $PLATFORMS; do
         docker build -t gcc-cmake -f ./docker/Dockerfile.linux . && \
         docker run --user $(id -u):$(id -g) --rm -v $(pwd):/src -w /src gcc-cmake:latest bash -c "\
         cmake -DCMAKE_CXX_FLAGS='-march=x86-64' -DCMAKE_TOOLCHAIN_FILE=toolchain-$platform.cmake -DSDK_VERSION=$SDK_VERSION -Bbuild/$platform -H. && \
-        make -C build/$platform -j$JOBS -j\$(nproc)"
+        make -C build/$platform -j\$(nproc)"
     else
-        if [ "$DEV_MODE" = true ] && [ ! -z "$XPLANE_PLUGIN_PATH" ]; then
-            cmake -DCMAKE_TOOLCHAIN_FILE=toolchain-$platform.cmake -DSDK_VERSION=$SDK_VERSION -DXPLANE_PLUGIN_PATH="$XPLANE_PLUGIN_PATH" -Bbuild/$platform -H.
-        else
-            cmake -DCMAKE_TOOLCHAIN_FILE=toolchain-$platform.cmake -DSDK_VERSION=$SDK_VERSION -Bbuild/$platform -H.
-        fi
+        cmake -DCMAKE_TOOLCHAIN_FILE=toolchain-$platform.cmake -DSDK_VERSION=$SDK_VERSION -Bbuild/$platform -H.
         make -C build/$platform -j$JOBS
     fi
 
@@ -197,21 +150,6 @@ for platform in $PLATFORMS; do
 done
 
 echo "Building has finished."
-
-if [ "$DEV_MODE" = true ]; then
-    echo "\n\033[1;32mDevelopment build complete!\033[0m"
-    if [ ! -z "$XPLANE_PLUGIN_PATH" ]; then
-        # Create plugin directory structure
-        PLUGIN_DIR="$XPLANE_PLUGIN_PATH/$PROJECT_NAME"
-        mkdir -p "$PLUGIN_DIR"
-        
-        for platform in $PLATFORMS; do
-            echo "Plugin installed to: $PLUGIN_DIR/${platform}_x64/$PROJECT_NAME.xpl"
-        done
-    fi
-    echo "\nTo rebuild after changes, run: make -C build/$PLATFORMS"
-    exit 0
-fi
 
 echo "Creating distribution bundle..."
 if [ -d "build/dist" ]; then
