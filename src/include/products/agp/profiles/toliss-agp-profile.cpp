@@ -137,7 +137,12 @@ void TolissAGPProfile::buttonPressed(const AGPButtonDef *button, XPLMCommandPhas
     auto datarefManager = Dataref::getInstance();
     if (button->datarefType == AGPDatarefType::LANDING_GEAR) {
         datarefManager->executeCommand(button->dataref.c_str(), phase);
-        datarefManager->set<int>("ckpt/gearHandle", static_cast<int>(button->value));
+
+        // Only write the handle when the lever enters a detent; on release it
+        // would re-assert the position we are leaving.
+        if (phase == xplm_CommandBegin) {
+            datarefManager->set<int>("ckpt/gearHandle", static_cast<int>(button->value));
+        }
     } else if (button->datarefType == AGPDatarefType::TERRAIN_ON_ND) {
         if (phase != xplm_CommandBegin) {
             return;
