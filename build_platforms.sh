@@ -1,89 +1,27 @@
 #!/bin/sh
 
-# Help function
-show_help() {
-    cat << EOF
-Usage: ./build_platforms.sh [OPTIONS]
-
-Build script for the WINCTRL X-Plane plugin. Supports building for multiple platforms.
-
-OPTIONS:
-    --help              Show this help message and exit
-
-    --platform=PLATFORM Build only the specified platform
-                        Available platforms: mac, win, lin
-
-EXAMPLES:
-    # Interactive mode (default) - prompts for platforms and options
-    ./build_platforms.sh
-
-    # Build only for Mac
-    ./build_platforms.sh --platform=mac
-
-    # Build for Mac and Windows
-    ./build_platforms.sh --platform=mac --platform=win
-
-    # Quick rebuild after changes (run after initial build)
-    make -C build/mac
-
-NOTES:
-    - The SDK/ folder must be present in the project root
-    - Linux builds require Docker
-
-EOF
-    exit 0
-}
-
-# Check for flags
-PLATFORM_OVERRIDE=""
-
-for arg in "$@"; do
-    case $arg in
-        --help)
-            show_help
-            ;;
-        --platform=*)
-            PLATFORM_OVERRIDE="${arg#*=}"
-            shift
-            ;;
-        *)
-            ;;
-    esac
-done
-
 PROJECT_NAME=$(find . -name "*.xcodeproj" | sed 's/\.xcodeproj//g' | sed 's/^\.\///g' | tr '[:upper:]' '[:lower:]')
 VERSION=$(grep "#define VERSION " src/include/config.h | cut -d " " -f 3 | tr -d '"')
 
 AVAILABLE_PLATFORMS="mac win lin"
 
-# Validate platform override if provided
-if [ ! -z "$PLATFORM_OVERRIDE" ]; then
-    if ! echo $AVAILABLE_PLATFORMS | grep -q $PLATFORM_OVERRIDE; then
-        echo "Invalid platform: $PLATFORM_OVERRIDE. Available: $AVAILABLE_PLATFORMS"
-        exit 1
-    fi
-    PLATFORMS="$PLATFORM_OVERRIDE"
+echo "Building $PROJECT_NAME.xpl version $VERSION. Is this correct? (y/n) [default: y]:"
+read CONFIRM
+
+if [ -z "$CONFIRM" ]; then
+    CONFIRM="y"
 fi
 
+if [ "$CONFIRM" != "y" ]; then
+    echo "Please update the version number in config.h and try again."
+    exit 1
+fi
+
+echo "Which platforms would you like to build? ($AVAILABLE_PLATFORMS) [default: all]:"
+read PLATFORMS
+
 if [ -z "$PLATFORMS" ]; then
-    echo "Building $PROJECT_NAME.xpl version $VERSION. Is this correct? (y/n) [default: y]:"
-    read CONFIRM
-
-    if [ -z "$CONFIRM" ]; then
-        CONFIRM="y"
-    fi
-
-    if [ "$CONFIRM" != "y" ]; then
-        echo "Please update the version number in config.h and try again."
-        exit 1
-    fi
-
-    echo "Which platforms would you like to build? ($AVAILABLE_PLATFORMS):"
-    read PLATFORMS
-
-    if [ -z "$PLATFORMS" ]; then
-        PLATFORMS=$AVAILABLE_PLATFORMS
-    fi
+    PLATFORMS=$AVAILABLE_PLATFORMS
 fi
 
 for platform in $PLATFORMS; do
