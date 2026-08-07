@@ -1,8 +1,10 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.25.1)
 SET(CMAKE_CXX_STANDARD 23)
 SET(CMAKE_CXX_STANDARD_REQUIRED ON)
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")
-SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0")
+# This is the distribution path: build_platforms.sh drives it for all three platforms, so it optimises.
+# Debug builds come from the Xcode project instead, with its own settings, and nothing here caters to them.
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2")
+SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2")
 PROJECT(winctrl C CXX)
 
 IF(APPLE)
