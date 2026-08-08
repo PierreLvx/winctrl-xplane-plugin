@@ -67,10 +67,16 @@ fi
 for platform in $PLATFORMS; do
     echo "Building $platform..."
     if [ $platform = "lin" ]; then
-        docker build -t gcc-cmake -f ./docker/Dockerfile.linux . && \
-        docker run --user $(id -u):$(id -g) --rm -v $(pwd):/src -w /src gcc-cmake:latest bash -c "\
+        docker build -t xplane-build:jammy-gcc13 -f ./docker/Dockerfile.linux . && \
+        docker run --user $(id -u):$(id -g) --rm -v $(pwd):/src -w /src xplane-build:jammy-gcc13 bash -c "\
         cmake -DCMAKE_CXX_FLAGS='-march=x86-64' -DCMAKE_TOOLCHAIN_FILE=toolchain-$platform.cmake -DSDK_VERSION=$SDK_VERSION -Bbuild/$platform -H. && \
-        make -C build/$platform -j\$(nproc)"
+        make -C build/$platform -j\$(nproc) && \
+        if objdump -T build/$platform/${platform}_x64/${PROJECT_NAME}.xpl | grep -q '__isoc23_'; then \
+            echo 'ERROR: this build links post-glibc-2.36 symbols:'; \
+            objdump -T build/$platform/${platform}_x64/${PROJECT_NAME}.xpl | grep -o '__isoc23_[a-z]*' | sort -u; \
+            echo 'The Linux image base is too new; the plugin will not load on older distros. See docker/Dockerfile.linux.'; \
+            exit 1; \
+        fi"
     else
         cmake -DCMAKE_TOOLCHAIN_FILE=toolchain-$platform.cmake -DSDK_VERSION=$SDK_VERSION -Bbuild/$platform -H.
         make -C build/$platform -j$JOBS

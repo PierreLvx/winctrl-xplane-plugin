@@ -1,4 +1,8 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 3.25.1)
+# 3.16 is the real floor: the newest features used here are LIST(PREPEND) (3.15)
+# and TARGET_LINK_OPTIONS (3.13). The old 3.25.1 was simply the cmake version
+# that shipped with the previous Debian 12 build image, and it locks out the
+# stock cmake 3.22 on the current Ubuntu 22.04 image.
+CMAKE_MINIMUM_REQUIRED(VERSION 3.16)
 SET(CMAKE_CXX_STANDARD 23)
 SET(CMAKE_CXX_STANDARD_REQUIRED ON)
 # This is the distribution path: build_platforms.sh drives it for all three platforms, so it optimises.
