@@ -171,8 +171,8 @@ void RotateMD11PAP3MCPProfile::updateDisplayData(PAP3MCPDisplayData &data) {
     data.verticalSpeedVisible = (std::abs(data.verticalSpeed) > 0.5f);
 
     // Course - MD-11 doesn't have CRS displays on the MCP (using standard datarefs for reference)
-    data.crsCapt = dataref->getCached<int>("sim/cockpit/radios/nav1_obs_degm");
-    data.crsFo = dataref->getCached<int>("sim/cockpit/radios/nav2_obs_degm");
+    data.crsCapt = static_cast<int>(dataref->getCached<float>("sim/cockpit/radios/nav1_obs_degm"));
+    data.crsFo = static_cast<int>(dataref->getCached<float>("sim/cockpit/radios/nav2_obs_degm"));
 
     // MD-11 doesn't have special digit flags
     data.digitA = false;

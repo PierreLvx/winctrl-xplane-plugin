@@ -93,7 +93,10 @@ FF777PAP3MCPProfile::FF777PAP3MCPProfile(ProductPAP3MCP *product) : PAP3MCPAircr
 }
 
 bool FF777PAP3MCPProfile::IsEligible() {
-    return Dataref::getInstance()->exists("1-sim/output/mcp/spd");
+    // The ToLiss SASL plugin publishes into the same 1-sim/ namespace, so this
+    // needs the same pair the FF777 FCU-EFIS and PDC profiles use.
+    return Dataref::getInstance()->exists("1-sim/ckpt/mcpApLButton/anim") &&
+           Dataref::getInstance()->exists("1-sim/output/mcp/ok");
 }
 
 const std::vector<std::string> &FF777PAP3MCPProfile::displayDatarefs() const {
@@ -175,8 +178,10 @@ void FF777PAP3MCPProfile::updateDisplayData(PAP3MCPDisplayData &data) {
     }
 
     data.speed = dataref->getCached<float>("1-sim/output/mcp/spd");
-    data.heading = dataref->getCached<int>("1-sim/output/mcp/hdg");
-    data.altitude = dataref->getCached<int>("1-sim/output/mcp/alt");
+    // Float, not int: the FF777 FCU-EFIS profile caches these two as floats, and
+    // a mismatched getCached<int> against that entry silently returns 0.
+    data.heading = static_cast<int>(dataref->getCached<float>("1-sim/output/mcp/hdg"));
+    data.altitude = static_cast<int>(dataref->getCached<float>("1-sim/output/mcp/alt"));
     data.verticalSpeed = dataref->getCached<float>("1-sim/output/mcp/vs");
     data.speedVisible = dataref->getCached<bool>("1-sim/output/mcp/isSpdOpen");
     data.verticalSpeedVisible = dataref->getCached<bool>("1-sim/output/mcp/isVsOpen");
@@ -184,8 +189,8 @@ void FF777PAP3MCPProfile::updateDisplayData(PAP3MCPDisplayData &data) {
     data.spdMach = dataref->getCached<bool>("1-sim/output/mcp/isMachTrg");
 
     // 777 doesn't have course on MCP (it's on EFIS panel), but we read standard X-Plane datarefs for reference
-    data.crsCapt = dataref->getCached<int>("sim/cockpit/radios/nav1_obs_degm");
-    data.crsFo = dataref->getCached<int>("sim/cockpit/radios/nav2_obs_degm");
+    data.crsCapt = static_cast<int>(dataref->getCached<float>("sim/cockpit/radios/nav1_obs_degm"));
+    data.crsFo = static_cast<int>(dataref->getCached<float>("sim/cockpit/radios/nav2_obs_degm"));
 
     // FF777 doesn't have special digit flags
     data.digitA = false;

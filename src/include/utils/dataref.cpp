@@ -326,57 +326,105 @@ void Dataref::drainMainThreadQueue() {
     }
 }
 
+// Above the largest interval getDisplayUpdateFrameInterval can return, so it
+// only ever fires for entries whose product stopped pulling them.
+static constexpr int kOrphanedDisplayRefCycles = 120;
+
+bool Dataref::pollCachedValue(const std::string &name, CachedValue &entry, int cycle) {
+    entry.lastPollCycleNumber = cycle;
+
+    if (!entry.resolved.handle) {
+        const ResolvedRef *resolved = findRef(name);
+        if (!resolved) {
+            return false;
+        }
+        entry.resolved = *resolved;
+    }
+
+    bool didChange = false;
+    std::visit(
+        [&](auto &&value) {
+            using T = std::decay_t<decltype(value)>;
+            T newValue = readValue<T>(entry.resolved);
+            if constexpr (std::is_floating_point_v<T>) {
+                didChange = std::fabs(value - newValue) > std::numeric_limits<T>::epsilon();
+            } else {
+                didChange = value != newValue;
+            }
+
+            if (didChange) {
+                // Through the reference, so a string or vector reuses its capacity
+                value = std::move(newValue);
+                entry.lastUpdateCycleNumber = cycle;
+            }
+        },
+        entry.value);
+
+    return didChange;
+}
+
 void Dataref::update() {
     drainMainThreadQueue();
 
-    std::vector<std::pair<std::string, CachedValue>> updates;
+    int cycle = XPLMGetCycleNumber();
+    std::vector<std::string> changed;
 
     for (auto &[key, data] : cachedValues) {
-        std::visit(
-            [&](auto &&value) {
-                using T = std::decay_t<decltype(value)>;
-                T newValue = get<T>(key.c_str());
-                bool didChange = false;
-                if constexpr (std::is_floating_point_v<T>) {
-                    didChange = std::fabs(value - newValue) > std::numeric_limits<T>::epsilon();
-                } else {
-                    didChange = value != newValue;
-                }
-
-                if (didChange) {
-                    updates.emplace_back(key,
-                        CachedValue{
-                            .value = newValue,
-                            .lastUpdateCycleNumber = XPLMGetCycleNumber(),
-                        });
-                }
-            },
-            data.value);
-    }
-
-    for (auto &[key, newData] : updates) {
-        auto it = cachedValues.find(key);
-        if (it == cachedValues.end()) {
-            // Unbound by a callback earlier in this loop; don't resurrect it
+        // Nothing clears the claim when a product unloads its profile or its
+        // device is unplugged, so an unpulled entry falls back to slow polling
+        // here instead of freezing.
+        if (data.displayOnly && cycle - data.lastPollCycleNumber < kOrphanedDisplayRefCycles) {
             continue;
         }
-        it->second = newData;
+
+        if (pollCachedValue(key, data, cycle)) {
+            changed.push_back(key);
+        }
+    }
+
+    for (const std::string &key : changed) {
+        // Unbound by a callback earlier in this loop; don't resurrect it
+        if (cachedValues.find(key) == cachedValues.end()) {
+            continue;
+        }
         executeChangedCallbacksForDataref(key.c_str());
     }
 }
 
-XPLMDataRef Dataref::findRef(const char *ref) {
+void Dataref::pollDisplayDatarefs(const std::vector<std::string> &refsToPoll) {
+    int cycle = XPLMGetCycleNumber();
+    for (const std::string &name : refsToPoll) {
+        auto it = cachedValues.find(name);
+        if (it == cachedValues.end()) {
+            continue;
+        }
+
+        CachedValue &entry = it->second;
+        entry.displayOnly = boundRefs.find(name) == boundRefs.end();
+        if (!entry.displayOnly || entry.lastPollCycleNumber == cycle) {
+            continue;
+        }
+
+        pollCachedValue(name, entry, cycle);
+    }
+}
+
+const ResolvedRef *Dataref::findRef(std::string_view ref) {
     auto it = refs.find(ref);
     if (it != refs.end()) {
-        return it->second;
+        return &it->second;
     }
 
-    XPLMDataRef handle = XPLMFindDataRef(ref);
+    // Only materialised on the miss path, where XPLMFindDataRef needs it
+    // null-terminated.
+    std::string name(ref);
+    XPLMDataRef handle = XPLMFindDataRef(name.c_str());
     if (!handle) {
         return nullptr;
     }
 
-    return refs.emplace(ref, handle).first->second;
+    ResolvedRef resolved{handle, XPLMGetDataRefTypes(handle)};
+    return &refs.emplace(std::move(name), resolved).first->second;
 }
 
 bool Dataref::exists(const char *ref) {
@@ -398,8 +446,24 @@ void Dataref::executeChangedCallbacksForDataref(const char *ref) {
 
     // Iterate a copy: a callback may register or unbind monitors on this ref,
     // which would invalidate the live vector mid-iteration.
-    std::vector<TaggedCallback> callbacks = it->second.changeCallbacks;
+    if (callbackDepth >= callbackPool.size()) {
+        callbackPool.resize(callbackDepth + 1);
+    }
+
+    std::vector<TaggedCallback> &callbacks = callbackPool[callbackDepth];
+    callbacks.assign(it->second.changeCallbacks.begin(), it->second.changeCallbacks.end());
     DataRefValueType value = cacheIt->second.value;
+
+    struct DepthGuard {
+            size_t &depth;
+            std::vector<TaggedCallback> &slot;
+            ~DepthGuard() {
+                depth--;
+                slot.clear();
+            }
+    } guard{callbackDepth, callbacks};
+    callbackDepth++;
+
     for (auto &tc : callbacks) {
         tc.func(value);
     }
@@ -464,7 +528,11 @@ T Dataref::getCached(const char *ref) {
     auto it = cachedValues.find(ref);
     if (it == cachedValues.end()) {
         auto val = get<T>(ref);
-        cachedValues[ref] = {.value = val, .lastUpdateCycleNumber = XPLMGetCycleNumber()};
+        CachedValue entry{.value = val, .lastUpdateCycleNumber = XPLMGetCycleNumber()};
+        if (const ResolvedRef *resolved = findRef(ref)) {
+            entry.resolved = *resolved;
+        }
+        cachedValues.emplace(std::string(ref), std::move(entry));
         return val;
     }
 
@@ -520,8 +588,8 @@ T Dataref::get(const char *ref) {
         return future.get();
     }
 
-    XPLMDataRef handle = findRef(ref);
-    if (!handle) {
+    const ResolvedRef *resolved = findRef(ref);
+    if (!resolved) {
         if constexpr (std::is_same_v<T, std::string>) {
             return "";
         } else if constexpr (std::is_same_v<T, std::vector<int>> || std::is_same_v<T, std::vector<float>> ||
@@ -532,40 +600,86 @@ T Dataref::get(const char *ref) {
         }
     }
 
+    return readValue<T>(*resolved);
+}
+
+template float Dataref::readValue<float>(const ResolvedRef &resolved);
+template double Dataref::readValue<double>(const ResolvedRef &resolved);
+template int Dataref::readValue<int>(const ResolvedRef &resolved);
+template bool Dataref::readValue<bool>(const ResolvedRef &resolved);
+template std::vector<int> Dataref::readValue<std::vector<int>>(const ResolvedRef &resolved);
+template std::vector<float> Dataref::readValue<std::vector<float>>(const ResolvedRef &resolved);
+template std::vector<unsigned char> Dataref::readValue<std::vector<unsigned char>>(const ResolvedRef &resolved);
+template std::string Dataref::readValue<std::string>(const ResolvedRef &resolved);
+
+// A result that exactly fills the scratch buffer means the ref may be longer,
+// which is the only case that pays for the size query.
+template<typename T>
+T Dataref::readValue(const ResolvedRef &resolved) {
+    XPLMDataRef handle = resolved.handle;
+
     if constexpr (std::is_same_v<T, bool>) {
-        XPLMDataTypeID refType = XPLMGetDataRefTypes(handle);
-        if ((refType & xplmType_Float) == xplmType_Float) {
+        if ((resolved.types & xplmType_Float) == xplmType_Float) {
             return XPLMGetDataf(handle) > std::numeric_limits<float>::epsilon();
-        } else if ((refType & xplmType_Double) == xplmType_Double) {
+        } else if ((resolved.types & xplmType_Double) == xplmType_Double) {
             return XPLMGetDatad(handle) > std::numeric_limits<double>::epsilon();
         } else {
             return XPLMGetDatai(handle) > 0;
         }
     } else if constexpr (std::is_same_v<T, int> || std::is_same_v<T, float> || std::is_same_v<T, double>) {
-        XPLMDataTypeID refType = XPLMGetDataRefTypes(handle);
-        if ((refType & xplmType_Float) == xplmType_Float) {
+        if ((resolved.types & xplmType_Float) == xplmType_Float) {
             return XPLMGetDataf(handle);
-        } else if ((refType & xplmType_Double) == xplmType_Double) {
+        } else if ((resolved.types & xplmType_Double) == xplmType_Double) {
             return XPLMGetDatad(handle);
         } else {
             return XPLMGetDatai(handle);
         }
     } else if constexpr (std::is_same_v<T, std::vector<int>>) {
+        int copied = XPLMGetDatavi(handle, scratchInts, 0, kScratchElements);
+        if (copied <= 0) {
+            return {};
+        } else if (copied < kScratchElements) {
+            return std::vector<int>(scratchInts, scratchInts + copied);
+        }
+
         int size = XPLMGetDatavi(handle, nullptr, 0, 0);
         std::vector<int> outValues(size);
         XPLMGetDatavi(handle, outValues.data(), 0, size);
         return outValues;
     } else if constexpr (std::is_same_v<T, std::vector<float>>) {
+        int copied = XPLMGetDatavf(handle, scratchFloats, 0, kScratchElements);
+        if (copied <= 0) {
+            return {};
+        } else if (copied < kScratchElements) {
+            return std::vector<float>(scratchFloats, scratchFloats + copied);
+        }
+
         int size = XPLMGetDatavf(handle, nullptr, 0, 0);
         std::vector<float> outValues(size);
         XPLMGetDatavf(handle, outValues.data(), 0, size);
         return outValues;
     } else if constexpr (std::is_same_v<T, std::vector<unsigned char>>) {
+        int copied = XPLMGetDatab(handle, scratchBytes, 0, kScratchBytes);
+        if (copied <= 0) {
+            return {};
+        } else if (copied < kScratchBytes) {
+            auto *bytes = reinterpret_cast<unsigned char *>(scratchBytes);
+            return std::vector<unsigned char>(bytes, bytes + copied);
+        }
+
         int size = XPLMGetDatab(handle, nullptr, 0, 0);
         std::vector<unsigned char> outValues(size);
         XPLMGetDatab(handle, outValues.data(), 0, size);
         return outValues;
     } else if constexpr (std::is_same_v<T, std::string>) {
+        int copied = XPLMGetDatab(handle, scratchBytes, 0, kScratchBytes);
+        if (copied <= 0) {
+            return "";
+        } else if (copied < kScratchBytes) {
+            auto *nul = static_cast<const char *>(memchr(scratchBytes, '\0', copied));
+            return std::string(scratchBytes, nul ? nul - scratchBytes : copied);
+        }
+
         int size = XPLMGetDatab(handle, nullptr, 0, 0);
         std::vector<char> str(size);
         XPLMGetDatab(handle, str.data(), 0, size);
@@ -595,12 +709,23 @@ template void Dataref::set<std::string>(const char *ref, std::string value, bool
 
 template<typename T>
 void Dataref::set(const char *ref, T value, bool setCacheOnly) {
-    XPLMDataRef handle = findRef(ref);
-    if (!handle) {
+    const ResolvedRef *resolved = findRef(ref);
+    if (!resolved) {
         return;
     }
 
-    cachedValues[ref] = {.value = value, .lastUpdateCycleNumber = XPLMGetCycleNumber()};
+    // Copied: a callback below may unbind this ref and erase what resolved
+    // points into.
+    const ResolvedRef resolvedCopy = *resolved;
+    XPLMDataRef handle = resolvedCopy.handle;
+
+    // Updated in place so an existing entry keeps its resolved handle and claim
+    CachedValue &entry = cachedValues[ref];
+    entry.value = value;
+    entry.lastUpdateCycleNumber = XPLMGetCycleNumber();
+    if (!entry.resolved.handle) {
+        entry.resolved = resolvedCopy;
+    }
 
     executeChangedCallbacksForDataref(ref);
 
@@ -610,7 +735,7 @@ void Dataref::set(const char *ref, T value, bool setCacheOnly) {
 
     if constexpr (std::is_same_v<T, bool> || std::is_same_v<T, int> || std::is_same_v<T, float> ||
                   std::is_same_v<T, double>) {
-        XPLMDataTypeID refType = XPLMGetDataRefTypes(handle);
+        XPLMDataTypeID refType = resolvedCopy.types;
         if ((refType & xplmType_Float) == xplmType_Float) {
             XPLMSetDataf(handle, value);
         } else if ((refType & xplmType_Double) == xplmType_Double) {

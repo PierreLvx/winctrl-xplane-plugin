@@ -81,6 +81,7 @@ class USBDevice {
         int inputPipe[2] = {-1, -1};
         static void InputReportCallback(void *context, int bytesRead, uint8_t *report);
 #endif
+        int profileMatchRetryCounter = 0;
 
     public:
         USBDevice(HIDDeviceHandle hidDevice, uint16_t vendorId, uint16_t productId, std::string vendorName, std::string productName);
@@ -134,6 +135,10 @@ class USBDevice {
         bool writeData(std::vector<uint8_t> data);
         size_t getWriteQueueSize();
         int getDisplayUpdateFrameInterval(int minWaitFrames = 0);
+
+        // Throttles the eligibility chain. Keeps retrying rather than giving up,
+        // since add-ons can register their datarefs late. True on the first call.
+        bool shouldRetryProfileMatch();
 
         static USBDevice *Device(HIDDeviceHandle hidDevice, uint16_t vendorId, uint16_t productId, std::string vendorName, std::string productName);
 

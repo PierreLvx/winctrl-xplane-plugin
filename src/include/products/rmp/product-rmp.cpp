@@ -186,6 +186,8 @@ void ProductRMP::updateDisplays(bool force) {
 
     bool shouldUpdate = force;
     auto datarefManager = Dataref::getInstance();
+    datarefManager->pollDisplayDatarefs(profile->displayDatarefs());
+
     for (const std::string &dataref : profile->displayDatarefs()) {
         if (!lastUpdateCycle || datarefManager->getCachedLastUpdate(dataref.c_str()) > lastUpdateCycle) {
             shouldUpdate = true;

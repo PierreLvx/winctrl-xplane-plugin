@@ -290,6 +290,18 @@ size_t USBDevice::getWriteQueueSize() {
     return writeQueueSize.load();
 }
 
+bool USBDevice::shouldRetryProfileMatch() {
+    static constexpr int kRetryIntervalFrames = 30;
+
+    if (profileMatchRetryCounter > 0) {
+        profileMatchRetryCounter--;
+        return false;
+    }
+
+    profileMatchRetryCounter = kRetryIntervalFrames;
+    return true;
+}
+
 int USBDevice::getDisplayUpdateFrameInterval(int minWaitFrames) {
     size_t queueSize = writeQueueSize.load();
 

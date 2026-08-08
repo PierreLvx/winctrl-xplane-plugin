@@ -290,7 +290,9 @@ void ProductFMC::update() {
     }
 
     if (!profile) {
-        setProfileForCurrentAircraft();
+        if (shouldRetryProfileMatch()) {
+            setProfileForCurrentAircraft();
+        }
         return;
     }
 
@@ -394,6 +396,8 @@ void ProductFMC::updatePage(bool forceUpdate) {
 
     auto datarefManager = Dataref::getInstance();
     bool shouldUpdate = forceUpdate;
+
+    datarefManager->pollDisplayDatarefs(profile->displayDatarefs());
 
     for (const std::string &dataref : profile->displayDatarefs()) {
         if (!lastUpdateCycle || datarefManager->getCachedLastUpdate(dataref.c_str()) > lastUpdateCycle) {

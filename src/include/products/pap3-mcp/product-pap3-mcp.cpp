@@ -167,7 +167,9 @@ void ProductPAP3MCP::update() {
     }
 
     if (!profile) {
-        setProfileForCurrentAircraft();
+        if (shouldRetryProfileMatch()) {
+            setProfileForCurrentAircraft();
+        }
         return;
     }
 
@@ -186,6 +188,8 @@ void ProductPAP3MCP::updateDisplays(bool force) {
 
     bool shouldUpdate = force;
     auto datarefManager = Dataref::getInstance();
+    datarefManager->pollDisplayDatarefs(profile->displayDatarefs());
+
     for (const std::string &dataref : profile->displayDatarefs()) {
         if (!lastUpdateCycle || datarefManager->getCachedLastUpdate(dataref.c_str()) > lastUpdateCycle) {
             shouldUpdate = true;
