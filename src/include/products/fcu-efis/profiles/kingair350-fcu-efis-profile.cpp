@@ -6,28 +6,46 @@
 
 #include <XPLMUtilities.h>
 
+static constexpr const char *kPanelLightKnob = "KA350/ianim/ohPanel/pilotInstrPanelLight";
+static constexpr const char *kMasterPanelLights = "KA350/ianim/ohPanel/masterPanelLights";
+static constexpr const char *kBatteryOn = "sim/cockpit/electrical/battery_on";
+
+// Mirrors the aircraft's own rheostat chain: knob position, zeroed when the master panel lights
+// switch or the bus is off. Deliberately not sim/cockpit2/switches/instrument_brightness_ratio,
+// which is the rendered light level and tracks ambient sunlight.
+static void applyBacklight(ProductFCUEfis *product) {
+    auto datarefManager = Dataref::getInstance();
+    bool powered = datarefManager->get<bool>(kMasterPanelLights) && datarefManager->get<bool>(kBatteryOn);
+    uint8_t target = powered ? datarefManager->get<float>(kPanelLightKnob) * 255 : 0;
+
+    product->setLedBrightness(FCUEfisLed::BACKLIGHT, target);
+    product->setLedBrightness(FCUEfisLed::EFISL_BACKLIGHT, target);
+    product->setLedBrightness(FCUEfisLed::EFISR_BACKLIGHT, 0);
+    product->setLedBrightness(FCUEfisLed::EXPED_BACKLIGHT, 0);
+
+    product->setLedBrightness(FCUEfisLed::OVERALL_GREEN, target);
+    product->setLedBrightness(FCUEfisLed::EFISR_OVERALL_GREEN, 0);
+    product->setLedBrightness(FCUEfisLed::EFISL_OVERALL_GREEN, target);
+    product->setLedBrightness(FCUEfisLed::SCREEN_BACKLIGHT, target);
+    product->setLedBrightness(FCUEfisLed::EFISR_SCREEN_BACKLIGHT, 0);
+    product->setLedBrightness(FCUEfisLed::EFISL_SCREEN_BACKLIGHT, target);
+
+    product->forceStateSync();
+}
+
 KingAir350FCUEfisProfile::KingAir350FCUEfisProfile(ProductFCUEfis *product) : FCUEfisAircraftProfile(product) {
-    Dataref::getInstance()->monitorExistingDataref<std::vector<float>>("sim/cockpit2/electrical/instrument_brightness_ratio_manual", [product](const std::vector<float> &brightness) {
-        if (brightness.size() < 2) {
-            return;
-        }
+    Dataref::getInstance()->monitorExistingDataref<float>(kPanelLightKnob, [product](float) {
+        applyBacklight(product);
+    },
+        this);
 
-        bool hasPower = Dataref::getInstance()->get<bool>("sim/cockpit/electrical/battery_on");
+    Dataref::getInstance()->monitorExistingDataref<bool>(kMasterPanelLights, [product](bool) {
+        applyBacklight(product);
+    },
+        this);
 
-        uint8_t target = hasPower ? brightness[1] * 255 : 0;
-        product->setLedBrightness(FCUEfisLed::BACKLIGHT, 0);
-        product->setLedBrightness(FCUEfisLed::EFISR_BACKLIGHT, 0);
-        product->setLedBrightness(FCUEfisLed::EFISL_BACKLIGHT, 0);
-        product->setLedBrightness(FCUEfisLed::EXPED_BACKLIGHT, 0);
-
-        product->setLedBrightness(FCUEfisLed::OVERALL_GREEN, target);
-        product->setLedBrightness(FCUEfisLed::EFISR_OVERALL_GREEN, 0);
-        product->setLedBrightness(FCUEfisLed::EFISL_OVERALL_GREEN, target);
-        product->setLedBrightness(FCUEfisLed::SCREEN_BACKLIGHT, target);
-        product->setLedBrightness(FCUEfisLed::EFISR_SCREEN_BACKLIGHT, 0);
-        product->setLedBrightness(FCUEfisLed::EFISL_SCREEN_BACKLIGHT, target);
-
-        product->forceStateSync();
+    Dataref::getInstance()->monitorExistingDataref<bool>(kBatteryOn, [product](bool) {
+        applyBacklight(product);
     },
         this);
 
@@ -46,7 +64,7 @@ KingAir350FCUEfisProfile::KingAir350FCUEfisProfile(ProductFCUEfis *product) : FC
     },
         this);
 
-    Dataref::getInstance()->executeChangedCallbacksForDataref("sim/cockpit2/electrical/instrument_brightness_ratio_manual");
+    applyBacklight(product);
 }
 
 bool KingAir350FCUEfisProfile::IsEligible() {
