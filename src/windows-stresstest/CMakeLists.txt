@@ -10,7 +10,7 @@ set(ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../..")
 set(USBDEVICE_DIR "${ROOT_DIR}/src/include/utils/usbdevice")
 set(INCLUDE_DIR   "${ROOT_DIR}/src/include")
 set(STUBS_DIR     "${CMAKE_CURRENT_SOURCE_DIR}/stubs")
-set(FONTS_DIR     "${ROOT_DIR}/src/include/products/fmc/fonts")
+set(FONTS_DIR     "${ROOT_DIR}/fonts")
 
 add_executable(fmc-stresstest
     # ---------- stress test sources (this folder) ----------
@@ -37,6 +37,9 @@ target_compile_definitions(fmc-stresstest PRIVATE
     IBM=1
     APL=0
     LIN=0
+
+    # Fallback fonts directory, used when there is no fonts/ next to the exe.
+    STRESS_FONTS_DIR="${FONTS_DIR}"
 )
 
 target_include_directories(fmc-stresstest PRIVATE
@@ -50,9 +53,13 @@ target_include_directories(fmc-stresstest PRIVATE
     ${INCLUDE_DIR}               # appstate.h, config.h
     ${INCLUDE_DIR}/utils         # logger.hpp, power-scheme.h
     ${USBDEVICE_DIR}             # usbdevice.h, usbcontroller.h
+)
 
-    # FMC font data (default.h — self-contained, no X-Plane deps)
-    ${FONTS_DIR}
+# Fonts are data files now, so put a copy next to the exe. That keeps the
+# harness self-contained when it is copied to a test machine.
+add_custom_command(TARGET fmc-stresstest POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${FONTS_DIR}" "$<TARGET_FILE_DIR:fmc-stresstest>/fonts"
 )
 
 # Windows HID libraries required by usbdevice_win.cpp / usbcontroller_win.cpp

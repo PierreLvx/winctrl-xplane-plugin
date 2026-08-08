@@ -722,7 +722,7 @@ void ProductFMC::reloadFontsMenu() {
             },
         },
         {
-            .name = "No custom font (reconnect USB)",
+            .name = "No custom font (reconnect USB to apply)",
             .checked = fmcFontPreference == "no_font",
             .content = [this](int itemId) {
                 AppState::getInstance()->writePreference("FMCFont", "no_font");
@@ -746,17 +746,9 @@ void ProductFMC::reloadFontsMenu() {
         fontMenuItems.push_back(MenuItem::Separator());
 
         for (const std::string &fontFile : customFontFiles) {
-            // Clean up font file name by removing whitespace and control characters
-            std::string cleanName = fontFile;
-            cleanName.erase(std::remove_if(cleanName.begin(), cleanName.end(),
-                                [](unsigned char c) {
-                                    return std::isspace(c) || std::iscntrl(c);
-                                }),
-                cleanName.end());
-
             fontMenuItems.push_back(
                 {
-                    .name = cleanName,
+                    .name = Font::DisplayNameForFile(fontFile),
                     .checked = fmcFontPreference == fontFile,
                     .content = [this, fontFile](int itemId) {
                         AppState::getInstance()->writePreference("FMCFont", fontFile);

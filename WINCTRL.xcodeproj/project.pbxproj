@@ -363,10 +363,7 @@
 		F61F8B2D2D059ED500E63C3F /* config.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = config.h; sourceTree = "<group>"; };
 		F621F80A2F1C264A00DDB31E /* jf146-fcu-efis-profile.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "jf146-fcu-efis-profile.h"; sourceTree = "<group>"; };
 		F621F80B2F1C264A00DDB31E /* jf146-fcu-efis-profile.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "jf146-fcu-efis-profile.cpp"; sourceTree = "<group>"; };
-		F62304282E59DF8500EE0089 /* vga_1.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vga_1.h; sourceTree = "<group>"; };
 		F623042D2E5A230B00EE0089 /* font.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = font.h; sourceTree = "<group>"; };
-		F62D2DF52E55FA4C00D307A4 /* xcrafts.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = xcrafts.h; sourceTree = "<group>"; };
-		F62D2DF92E55FA9100D307A4 /* 737.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = 737.h; sourceTree = "<group>"; };
 		F633E3D72FBE25B100CBE019 /* zibo-fcu-efis-profile.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "zibo-fcu-efis-profile.h"; sourceTree = "<group>"; };
 		F633E3D82FBE25B100CBE019 /* zibo-fcu-efis-profile.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "zibo-fcu-efis-profile.cpp"; sourceTree = "<group>"; };
 		F6354FB72FC457B200D67444 /* xcrafts-erj-tcas-profile.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "xcrafts-erj-tcas-profile.h"; sourceTree = "<group>"; };
@@ -415,7 +412,6 @@
 		F67FE8122E895BAC00C4243C /* laminar-a333-fcu-efis-profile.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "laminar-a333-fcu-efis-profile.h"; sourceTree = "<group>"; };
 		F67FE8132E895BAC00C4243C /* laminar-a333-fcu-efis-profile.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "laminar-a333-fcu-efis-profile.cpp"; sourceTree = "<group>"; };
 		F68164E42E3161FD00319E9D /* usbcontroller.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = usbcontroller.cpp; sourceTree = "<group>"; };
-		F681E21B2FC9D8BB0009D9FB /* 744.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = 744.h; sourceTree = "<group>"; };
 		F681E21C2FC9E5A30009D9FB /* stratosphere77w-fmc-profile.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "stratosphere77w-fmc-profile.h"; sourceTree = "<group>"; };
 		F681E21D2FC9E5A30009D9FB /* stratosphere77w-fmc-profile.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "stratosphere77w-fmc-profile.cpp"; sourceTree = "<group>"; };
 		F681E2202FC9E5AE0009D9FB /* stratosphere77w-fcu-efis-profile.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "stratosphere77w-fcu-efis-profile.h"; sourceTree = "<group>"; };
@@ -435,11 +431,6 @@
 		F69575012FFE7B74006C0A76 /* nws-aircraft-profile.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "nws-aircraft-profile.h"; sourceTree = "<group>"; };
 		F69575022FFE7B74006C0A76 /* product-nws.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "product-nws.h"; sourceTree = "<group>"; };
 		F69575032FFE7B74006C0A76 /* product-nws.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "product-nws.cpp"; sourceTree = "<group>"; };
-		F69BE2962E619CC00019EA48 /* airbus.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = airbus.h; sourceTree = "<group>"; };
-		F69BE2972E61AC210019EA48 /* default.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = default.h; sourceTree = "<group>"; };
-		F69CA2C9301B85A8001B0847 /* LTN.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LTN.h; sourceTree = "<group>"; };
-		F69CA2CA301B85A8001B0847 /* md11-cdu.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "md11-cdu.h"; sourceTree = "<group>"; };
-		F69CA2CB301B85A8001B0847 /* Q4XP.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Q4XP.h; sourceTree = "<group>"; };
 		F69CA2CC301B860A001B0847 /* felis742-ltn-fmc-profile.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "felis742-ltn-fmc-profile.h"; sourceTree = "<group>"; };
 		F69CA2CD301B860A001B0847 /* felis742-ltn-fmc-profile.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "felis742-ltn-fmc-profile.cpp"; sourceTree = "<group>"; };
 		F69FF2282E1D13CB00F9D2D9 /* DeviceModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceModel.swift; sourceTree = "<group>"; };
@@ -676,15 +667,6 @@
 			children = (
 				F623042D2E5A230B00EE0089 /* font.h */,
 				F67110DC2E5AF429008D493B /* font.cpp */,
-				F69BE2972E61AC210019EA48 /* default.h */,
-				F69BE2962E619CC00019EA48 /* airbus.h */,
-				F62D2DF92E55FA9100D307A4 /* 737.h */,
-				F681E21B2FC9D8BB0009D9FB /* 744.h */,
-				F62D2DF52E55FA4C00D307A4 /* xcrafts.h */,
-				F62304282E59DF8500EE0089 /* vga_1.h */,
-				F69CA2C9301B85A8001B0847 /* LTN.h */,
-				F69CA2CA301B85A8001B0847 /* md11-cdu.h */,
-				F69CA2CB301B85A8001B0847 /* Q4XP.h */,
 			);
 			path = fonts;
 			sourceTree = "<group>";

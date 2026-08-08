@@ -1,23 +1,74 @@
 #include "font.h"
 
-#include "737.h"
-#include "744.h"
-#include "LTN.h"
-#include "Q4XP.h"
-#include "airbus.h"
 #include "appstate.h"
 #include "config.h"
-#include "default.h"
-#include "md11-cdu.h"
-#include "vga_1.h"
-#include "xcrafts.h"
 
 #include <algorithm>
+#include <cctype>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
 #include <XPLMUtilities.h>
+
+namespace {
+struct ShippedFont {
+        FontVariant variant;
+        const char *filename;
+        const char *displayName;
+};
+
+// The fonts shipped in the plugin's fonts/ directory. Every FontVariant a
+// profile can request must appear here, and displayName is what the Plugins
+// menu shows for that file. Nothing is compiled into the binary: a missing file
+// means the font cannot be loaded, so keep this table and fonts/ in step.
+const ShippedFont kShippedFonts[] = {
+    {FontVariant::Default, "winctrl.xpwwf", "WINCTRL Default"},
+    {FontVariant::FontAirbus, "airbus.xpwwf", "Airbus"},
+    {FontVariant::Font737, "boeing-737.xpwwf", "Boeing 737"},
+    {FontVariant::Font744, "boeing-747.xpwwf", "Boeing 747"},
+    {FontVariant::FontXCrafts, "xcrafts.xpwwf", "X-Crafts"},
+    {FontVariant::FontVGA1, "vga.xpwwf", "VGA"},
+    {FontVariant::FontMD11, "md11-cdu.xpwwf", "MD-11"},
+    {FontVariant::FontLTN, "ltn.xpwwf", "LTN"},
+    {FontVariant::FontQ4XP, "q4xp.xpwwf", "Q4XP"},
+};
+} // namespace
+
+const std::string Font::FilenameForVariant(FontVariant variant) {
+    for (const ShippedFont &font : kShippedFonts) {
+        if (font.variant == variant) {
+            return font.filename;
+        }
+    }
+
+    return kShippedFonts[0].filename; // FontVariant::Default
+}
+
+const std::string Font::DisplayNameForFile(const std::string &filename) {
+    for (const ShippedFont &font : kShippedFonts) {
+        if (filename == font.filename) {
+            return font.displayName;
+        }
+    }
+
+    // A user font: show the bare filename. Control characters would corrupt the
+    // menu, but interior spaces are kept so multi-word names stay readable.
+    std::string name = std::filesystem::path(filename).stem().string();
+    name.erase(std::remove_if(name.begin(), name.end(),
+                   [](unsigned char c) {
+                       return std::iscntrl(c);
+                   }),
+        name.end());
+
+    size_t first = name.find_first_not_of(" \t");
+    size_t last = name.find_last_not_of(" \t");
+    if (first == std::string::npos) {
+        return filename;
+    }
+
+    return name.substr(first, last - first + 1);
+}
 
 const std::vector<std::vector<unsigned char>> Font::GlyphData(std::string filename, unsigned char hardwareIdentifier, FMCHardwareType hardwareType) {
     std::string pluginDirectory = AppState::getInstance()->getPluginDirectory();
@@ -28,7 +79,7 @@ const std::vector<std::vector<unsigned char>> Font::GlyphData(std::string filena
     std::filesystem::path fontFile = std::filesystem::path(pluginDirectory) / "fonts" / filename;
     std::ifstream file(fontFile, std::ios::binary);
     if (!file) {
-        Logger::getInstance()->critical("Could not open custom font file: %s\n", fontFile.c_str());
+        Logger::getInstance()->critical("Could not open font file: %s\n", fontFile.c_str());
         return {};
     }
 
@@ -55,48 +106,16 @@ const std::vector<std::vector<unsigned char>> Font::GlyphData(std::string filena
 }
 
 const std::vector<std::vector<unsigned char>> Font::GlyphData(FontVariant variant, unsigned char hardwareIdentifier, FMCHardwareType hardwareType) {
-    std::vector<std::vector<unsigned char>> result = {};
+    const std::string filename = FilenameForVariant(variant);
+    std::vector<std::vector<unsigned char>> result = GlyphData(filename, hardwareIdentifier, hardwareType);
 
-    switch (variant) {
-        case FontVariant::FontAirbus:
-            result = fmcFontAirbus;
-            break;
-
-        case FontVariant::Font737:
-            result = fmcFont737;
-            break;
-
-        case FontVariant::Font744:
-            result = fmcFont744;
-            break;
-
-        case FontVariant::FontXCrafts:
-            result = fmcFontXCrafts;
-            break;
-
-        case FontVariant::FontVGA1:
-            result = fmcFontVGA1;
-            break;
-
-        case FontVariant::FontMD11:
-            result = fmcFontMd11Cdu;
-            break;
-
-        case FontVariant::FontLTN:
-            result = fmcFontLTN;
-            break;
-
-        case FontVariant::FontQ4XP:
-            result = fmcFontQ4XP;
-            break;
-
-        case FontVariant::Default:
-        default:
-            result = fmcFontDefault;
-            break;
+    // Variant fonts are files now, so one can genuinely be absent. Fall back to
+    // the WINCTRL font rather than leaving the display without any font at all.
+    const std::string fallback = FilenameForVariant(FontVariant::Default);
+    if (result.empty() && filename != fallback) {
+        Logger::getInstance()->critical("Font '%s' could not be loaded, falling back to '%s'\n", filename.c_str(), fallback.c_str());
+        result = GlyphData(fallback, hardwareIdentifier, hardwareType);
     }
-
-    convertGlyphDataForHardware(result, hardwareIdentifier, hardwareType);
 
     return result;
 }
@@ -124,6 +143,16 @@ const std::vector<std::string> Font::ReadCustomFontFiles() {
     } catch (const std::filesystem::filesystem_error &e) {
         Logger::getInstance()->critical("Error reading fonts directory: %s\n", e.what());
     }
+
+    // directory_iterator order is filesystem-defined, so sort to keep the menu
+    // in the same order on every machine. Case-insensitive, otherwise every
+    // capitalised user font would sort above the lowercase shipped ones.
+    std::sort(fontFiles.begin(), fontFiles.end(), [](const std::string &a, const std::string &b) {
+        return std::lexicographical_compare(a.begin(), a.end(), b.begin(), b.end(),
+            [](unsigned char x, unsigned char y) {
+                return std::tolower(x) < std::tolower(y);
+            });
+    });
 
     return fontFiles;
 }
@@ -338,7 +367,7 @@ bool padGlyphsToHeight(std::vector<std::vector<unsigned char>> &data, unsigned c
         return false;
     }
 
-    // default.h's two 0x02 packets are only used HERE to split the authored font into
+    // The authored font's two 0x02 packets are only used HERE to split it into
     // set0 = [0, reset0), set1 = (reset0, reset1), suffix = [reset1, end). We do NOT
     // re-emit the 0x02 packets (the resize format omits them, see below); the suffix is
     // replayed with its 0x02 stripped.

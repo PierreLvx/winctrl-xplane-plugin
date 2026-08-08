@@ -40,9 +40,9 @@ class StressFMC : public USBDevice {
         void setLedBrightness(uint8_t led, uint8_t brightness);
         void setAllLedsEnabled(bool enable);
 
-        // Selectable fonts (sniffed packet arrays from the main project's
-        // fonts directory, all MCDU-format). Index 0 is the default font
-        // uploaded by connect().
+        // Selectable fonts, read from the .xpwwf files in fonts/ next to the
+        // exe (or the repository's fonts/ when run from a build directory).
+        // Index 0 is the font uploaded by connect().
         static size_t fontCount();
         static const char *fontName(size_t index);
         void loadFont(size_t index);

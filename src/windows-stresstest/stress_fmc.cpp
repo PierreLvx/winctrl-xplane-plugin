@@ -3,11 +3,11 @@
 // Init packets are copied verbatim from ProductFMC::connect() in product-fmc.cpp.
 // The identifierByte is hardcoded to 0x32 (MCDU), matching the sniffed source.
 //
-// Font data comes from default.h (fmcFontDefault) — a self-contained array of
-// USB packets. For MCDU (identifierByte == 0x32) the hardware conversion in
-// Font::convertGlyphDataForHardware() is a no-op (the sniffed font data already
-// uses 0x32), so we send the packets directly without involving font.cpp or any
-// X-Plane / AppState dependencies.
+// Fonts are read from the .xpwwf files in the plugin's fonts/ directory, the
+// same files the plugin ships. For MCDU (identifierByte == 0x32) the hardware
+// conversion in Font::convertGlyphDataForHardware() is a no-op (the sniffed font
+// data already uses 0x32), so we send the packets verbatim without involving
+// font.cpp or any X-Plane / AppState dependencies.
 //
 // The draw path mirrors ProductFMC::draw():
 //   For each character: push {0x42, 0x00, char} into a flat buffer, then send
@@ -15,52 +15,137 @@
 
 #include "stress_fmc.h"
 
-// Self-contained font data — no X-Plane or AppState dependency. All of these
-// are MCDU-format packet arrays (identifier 0x32 baked in), so they can be
-// sent verbatim. md11-cdu.h is excluded: it targets different hardware.
-#include "737.h"
-#include "744.h"
-#include "airbus.h"
-#include "default.h"
-#include "vga_1.h"
-#include "xcrafts.h"
-
 #include <algorithm>
 #include <cstdio>
 #include <cstring>
+#include <filesystem>
+#include <fstream>
+#include <windows.h>
 
 // ---------------------------------------------------------------------------
-// Selectable fonts. Index 0 is the default font used by connect().
+// Selectable fonts, discovered from the .xpwwf files in a fonts/ directory.
+// Index 0 is the font uploaded by connect().
 // ---------------------------------------------------------------------------
 namespace {
     struct StressFont {
-            const char *name;
-            const std::vector<std::vector<unsigned char>> *packets;
+            std::string name;
+            std::filesystem::path path;
     };
 
-    const StressFont kFonts[] = {
-        {"Default", &fmcFontDefault},
-        {"Airbus", &fmcFontAirbus},
-        {"Boeing 737", &fmcFont737},
-        {"Boeing 744", &fmcFont744},
-        {"X-Crafts", &fmcFontXCrafts},
-        {"VGA", &fmcFontVGA1},
-    };
+    // The MCDU font the plugin treats as its default; hoisted to index 0 so
+    // connect() uploads the same font it always has.
+    const char *kDefaultFontFile = "winctrl.xpwwf";
+
+    // Excluded: it targets different hardware (100-byte packets, not the MCDU
+    // format this harness hardcodes via identifierByte 0x32).
+    const char *kExcludedFontFile = "md11-cdu.xpwwf";
+
+    std::filesystem::path executableDirectory() {
+        char buffer[MAX_PATH] = {0};
+        DWORD length = GetModuleFileNameA(nullptr, buffer, MAX_PATH);
+        if (length == 0 || length >= MAX_PATH) {
+            return {};
+        }
+        return std::filesystem::path(buffer).parent_path();
+    }
+
+    // fonts/ next to the exe wins, so the harness can be copied to a test
+    // machine with its fonts alongside. STRESS_FONTS_DIR is the repository's
+    // fonts/ directory, baked in by CMake for running straight from a build dir.
+    std::filesystem::path fontsDirectory() {
+        std::error_code ec;
+
+        std::filesystem::path local = executableDirectory() / "fonts";
+        if (std::filesystem::is_directory(local, ec)) {
+            return local;
+        }
+
+#ifdef STRESS_FONTS_DIR
+        std::filesystem::path repo(STRESS_FONTS_DIR);
+        if (std::filesystem::is_directory(repo, ec)) {
+            return repo;
+        }
+#endif
+
+        return {};
+    }
+
+    const std::vector<StressFont> &fonts() {
+        static const std::vector<StressFont> discovered = [] {
+            std::vector<StressFont> result;
+
+            std::filesystem::path directory = fontsDirectory();
+            if (directory.empty()) {
+                printf("[StressFMC] No fonts directory found; font upload is unavailable.\n");
+                return result;
+            }
+
+            std::error_code ec;
+            for (const auto &entry : std::filesystem::directory_iterator(directory, ec)) {
+                if (!entry.is_regular_file() || entry.path().extension() != ".xpwwf") {
+                    continue;
+                }
+                if (entry.path().filename() == kExcludedFontFile) {
+                    continue;
+                }
+                result.push_back({entry.path().stem().string(), entry.path()});
+            }
+
+            std::sort(result.begin(), result.end(), [](const StressFont &a, const StressFont &b) {
+                if ((a.path.filename() == kDefaultFontFile) != (b.path.filename() == kDefaultFontFile)) {
+                    return a.path.filename() == kDefaultFontFile;
+                }
+                return a.name < b.name;
+            });
+
+            printf("[StressFMC] Found %zu fonts in %s\n", result.size(), directory.string().c_str());
+            return result;
+        }();
+
+        return discovered;
+    }
+
+    // Same length-prefixed format the plugin reads: <len:u8><len bytes> repeated.
+    std::vector<std::vector<unsigned char>> readFontFile(const std::filesystem::path &path) {
+        std::ifstream file(path, std::ios::binary);
+        if (!file) {
+            printf("[StressFMC] Could not open font file: %s\n", path.string().c_str());
+            return {};
+        }
+
+        std::vector<std::vector<unsigned char>> packets;
+        unsigned char lengthByte = 0;
+
+        while (file.read(reinterpret_cast<char *>(&lengthByte), sizeof(lengthByte))) {
+            if (lengthByte == 0) {
+                break;
+            }
+
+            std::vector<unsigned char> packet(lengthByte, 0);
+            if (!file.read(reinterpret_cast<char *>(packet.data()), lengthByte)) {
+                printf("[StressFMC] Truncated font file: %s\n", path.string().c_str());
+                break;
+            }
+            packets.push_back(std::move(packet));
+        }
+
+        return packets;
+    }
 } // namespace
 
 size_t StressFMC::fontCount() {
-    return sizeof(kFonts) / sizeof(kFonts[0]);
+    return fonts().size();
 }
 
 const char *StressFMC::fontName(size_t index) {
-    return index < fontCount() ? kFonts[index].name : "?";
+    return index < fontCount() ? fonts()[index].name.c_str() : "?";
 }
 
 void StressFMC::loadFont(size_t index) {
     if (index >= fontCount()) {
         return;
     }
-    for (const auto &packet : *kFonts[index].packets) {
+    for (const auto &packet : readFontFile(fonts()[index].path)) {
         writeData(std::vector<uint8_t>(packet.begin(), packet.end()));
     }
 }
