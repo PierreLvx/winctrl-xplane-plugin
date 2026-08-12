@@ -17,6 +17,7 @@
 
 #include <algorithm>
 #include <set>
+#include <utility>
 #include <XPLMUtilities.h>
 
 // The desktop app overrides this function to get notified of button presses
@@ -279,7 +280,7 @@ void USBDevice::processOnMainThread(const InputEvent &event) {
 void USBDevice::processQueuedEvents() {
     std::lock_guard<std::mutex> lock(eventQueueMutex);
     while (!eventQueue.empty()) {
-        InputEvent event = eventQueue.front();
+        InputEvent event = std::move(eventQueue.front());
         eventQueue.pop();
 
         didReceiveData(event.reportId, event.reportData.data(), event.reportLength);
