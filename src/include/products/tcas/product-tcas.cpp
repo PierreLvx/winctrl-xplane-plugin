@@ -175,24 +175,9 @@ void ProductTCAS::setLCDText(const std::string &squawkCode) {
         0x00, 0x24, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
     packet.resize(64, 0x00);
 
-    const int rowOffsets[7] = {37, 33, 29, 25, 49, 45, 41};
+    const int segmentRowOffsets[7] = {37, 33, 29, 25, 49, 45, 41};
 
-    std::string allDigits = squawkCode;
-
-    for (int digitIndex = 0; digitIndex < 4; ++digitIndex) {
-        if (digitIndex < static_cast<int>(allDigits.length())) {
-            char c = allDigits[digitIndex];
-            uint8_t charMask = SegmentDisplay::getSegmentMask(c);
-
-            for (int segIndex = 0; segIndex < 7; ++segIndex) {
-                if (charMask & (1 << segIndex)) {
-                    int byteOffset = rowOffsets[segIndex] + (digitIndex / 8);
-                    int bitPos = digitIndex % 8;
-                    packet[byteOffset] |= (1 << bitPos);
-                }
-            }
-        }
-    }
+    SegmentDisplay::encodeBitplane(packet, squawkCode, 0, segmentRowOffsets, 7, -1);
 
     writeData(packet);
 

@@ -201,15 +201,14 @@ void ProductUrsaMinorThrottle::setVibration(uint8_t vibration, bool leftSide, bo
 }
 
 void ProductUrsaMinorThrottle::setLCDText(const std::string &text) {
-    bool unknownFlag = false;
     std::vector<uint8_t> packet = {
         0xF0, 0x00, packetNumber, 0x35, ProductUrsaMinorThrottle::PACIdentifierByte, 0xB9,
         0x00, 0x00, 0x02, 0x01, 0x00, 0x00, 0xFF, 0xFF, 0x00, 0x00,
         0x00, 0x24, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
     packet.resize(64, 0x00);
 
-    const int rowOffsets[9] = {53, 49, 45, 41, 37, 33, 29, 25, 57};
-    const int digitBits[4] = {0, 1, 2, 3};
+    const int segmentRowOffsets[7] = {53, 49, 45, 41, 37, 33, 29};
+    const int dotRowOffset = 25;
 
     std::string charsOnly = "";
     uint8_t dotsMask = 0;
@@ -247,36 +246,7 @@ void ProductUrsaMinorThrottle::setLCDText(const std::string &text) {
         charsOnly += " ";
     }
 
-    for (int i = 0; i < 4; ++i) {
-        char c = charsOnly[i];
-        int targetBit = digitBits[i];
-
-        uint16_t mask = SegmentDisplay::getSegmentMask(c);
-
-        // Apply the unknown flag ONLY to the first character (L or R)
-        if (i == 0 && unknownFlag) {
-            mask |= 0x100; // Set Bit 8
-        }
-
-        for (int segIndex = 0; segIndex < 9; ++segIndex) {
-            bool turnOn = false;
-
-            if (segIndex == 7) {
-                if ((dotsMask >> i) & 1) {
-                    turnOn = true;
-                }
-            } else {
-                if ((mask >> segIndex) & 1) {
-                    turnOn = true;
-                }
-            }
-
-            if (turnOn) {
-                int byteOffset = rowOffsets[segIndex];
-                packet[byteOffset] |= (1 << targetBit);
-            }
-        }
-    }
+    SegmentDisplay::encodeBitplane(packet, charsOnly, dotsMask, segmentRowOffsets, 7, dotRowOffset);
 
     writeData(packet);
 

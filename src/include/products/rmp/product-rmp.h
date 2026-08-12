@@ -53,7 +53,6 @@ class ProductRMP : public USBDevice {
         std::string cachedStbyDisplay;
 
         void setProfileForCurrentAircraft();
-        void parseSegment(const std::string &text, int expectedLength, std::string &outDigits, uint16_t &colonMask, int digitOffset);
         const char *positionName() const;
         std::string variantPreferenceKey() const;
 

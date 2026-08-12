@@ -401,4 +401,88 @@ namespace SegmentDisplay {
 
         return result;
     }
+
+    void parseSegmentText(const std::string &text, int expectedLength, std::string &outDigits, uint16_t &dotMask, int digitOffset, DotPlacement dotPlacement, char slashReplacement) {
+        std::string digits;
+        uint16_t localDotMask = 0;
+
+        for (char c : text) {
+            const bool isSeparator = (c == '.') || (c == ':' && dotPlacement == DotPlacement::DualDot);
+
+            if (isSeparator && digits.empty() && dotPlacement == DotPlacement::PrecedingDigit) {
+                // No preceding digit to attach the dot to; keep the character as-is
+                digits += c;
+                continue;
+            }
+
+            if (isSeparator) {
+                if (digits.empty()) {
+                    continue;
+                }
+
+                switch (dotPlacement) {
+                    case DotPlacement::PrecedingDigit:
+                        localDotMask |= (1 << (digits.length() - 1));
+                        break;
+                    case DotPlacement::DualDot:
+                        if (expectedLength >= 6) {
+                            // Standard: dot bits for digit before (Left) and digit after (Right)
+                            if (c == ':') {
+                                localDotMask |= (1 << (digits.length() - 1)); // Upper Dot
+                            }
+                            localDotMask |= (1 << digits.length()); // Lower Dot
+                        } else {
+                            // 4-Digit Displays: dot bits for digit after (Right) and next digit (Right + 1)
+                            if (c == ':') {
+                                localDotMask |= (1 << digits.length()); // Upper Dot
+                            }
+                            localDotMask |= (1 << (digits.length() + 1)); // Lower Dot
+                        }
+                        break;
+                }
+            } else if (slashReplacement != '\0' && c == '/') {
+                digits += slashReplacement;
+            } else {
+                digits += c;
+            }
+        }
+
+        // Calculate padding amount before modifying digits
+        int paddingAmount = 0;
+        if (digits.length() < static_cast<size_t>(expectedLength)) {
+            paddingAmount = expectedLength - static_cast<int>(digits.length());
+        }
+
+        // Shift dot positions by padding amount and add to global mask with offset
+        dotMask |= (localDotMask << paddingAmount) << digitOffset;
+
+        // Pad or truncate to expected length
+        while (digits.length() < static_cast<size_t>(expectedLength)) {
+            digits = ' ' + digits; // Left-pad with spaces
+        }
+        if (digits.length() > static_cast<size_t>(expectedLength)) {
+            digits = digits.substr(digits.length() - expectedLength);
+        }
+        outDigits += digits;
+    }
+
+    void encodeBitplane(std::vector<uint8_t> &packet, const std::string &digits, uint16_t dotMask, const int *segmentRowOffsets, int numSegmentRows, int dotRowOffset) {
+        for (int digitIndex = 0; digitIndex < static_cast<int>(digits.length()); ++digitIndex) {
+            uint8_t charMask = getSegmentMask(digits[digitIndex]);
+
+            for (int segIndex = 0; segIndex < numSegmentRows; ++segIndex) {
+                if (charMask & (1 << segIndex)) {
+                    int byteOffset = segmentRowOffsets[segIndex] + (digitIndex / 8);
+                    int bitPos = digitIndex % 8;
+                    packet[byteOffset] |= (1 << bitPos);
+                }
+            }
+
+            if (dotRowOffset >= 0 && (dotMask & (1 << digitIndex))) {
+                int byteOffset = dotRowOffset + (digitIndex / 8);
+                int bitPos = digitIndex % 8;
+                packet[byteOffset] |= (1 << bitPos);
+            }
+        }
+    }
 }
