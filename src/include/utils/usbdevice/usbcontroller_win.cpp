@@ -238,6 +238,37 @@ void USBController::addDeviceFromHandle(HANDLE hidDevice, const std::string &dev
     });
 }
 
+// The VID is embedded in the device path itself (see deviceGroupKey above),
+// so this filters out every non-WINCTRL HID device without opening a handle
+// to it just to ask HidD_GetAttributes.
+static bool devicePathMatchesVendorId(const std::string &devicePath, uint16_t vendorId) {
+    std::string lower = devicePath;
+    for (char &c : lower) {
+        c = (char) tolower((unsigned char) c);
+    }
+
+    size_t vidPos = lower.find("vid_");
+    if (vidPos == std::string::npos || vidPos + 8 > lower.length()) {
+        return false;
+    }
+
+    unsigned int parsedVendorId = 0;
+    for (size_t i = 0; i < 4; ++i) {
+        char c = lower[vidPos + 4 + i];
+        int digit;
+        if (c >= '0' && c <= '9') {
+            digit = c - '0';
+        } else if (c >= 'a' && c <= 'f') {
+            digit = 10 + (c - 'a');
+        } else {
+            return false;
+        }
+        parsedVendorId = (parsedVendorId << 4) | digit;
+    }
+
+    return parsedVendorId == vendorId;
+}
+
 // Calls deviceHandler for every present WINCTRL HID interface with its group
 // key; other vendors are filtered out here. The handler owns the handle.
 void USBController::enumerateHidDevices(std::function<void(HANDLE, const std::string &, const std::string &)> deviceHandler) {
@@ -261,15 +292,17 @@ void USBController::enumerateHidDevices(std::function<void(HANDLE, const std::st
         deviceDetail->cbSize = sizeof(SP_DEVICE_INTERFACE_DETAIL_DATA);
 
         if (SetupDiGetDeviceInterfaceDetail(deviceInfoSet, &deviceInterfaceData, deviceDetail, requiredSize, nullptr, nullptr)) {
-            HANDLE hidDevice = CreateFile(deviceDetail->DevicePath, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_EXISTING, 0, nullptr);
-            if (hidDevice != INVALID_HANDLE_VALUE) {
-                HIDD_ATTRIBUTES attributes = {};
-                attributes.Size = sizeof(attributes);
-                std::string devicePath = std::string(deviceDetail->DevicePath);
-                if (HidD_GetAttributes(hidDevice, &attributes) && attributes.VendorID == WINCTRL_VENDOR_ID) {
-                    deviceHandler(hidDevice, devicePath, deviceGroupKey(devicePath, attributes.VendorID, attributes.ProductID));
-                } else {
-                    CloseHandle(hidDevice);
+            std::string devicePath = std::string(deviceDetail->DevicePath);
+            if (devicePathMatchesVendorId(devicePath, WINCTRL_VENDOR_ID)) {
+                HANDLE hidDevice = CreateFile(deviceDetail->DevicePath, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_EXISTING, 0, nullptr);
+                if (hidDevice != INVALID_HANDLE_VALUE) {
+                    HIDD_ATTRIBUTES attributes = {};
+                    attributes.Size = sizeof(attributes);
+                    if (HidD_GetAttributes(hidDevice, &attributes) && attributes.VendorID == WINCTRL_VENDOR_ID) {
+                        deviceHandler(hidDevice, devicePath, deviceGroupKey(devicePath, attributes.VendorID, attributes.ProductID));
+                    } else {
+                        CloseHandle(hidDevice);
+                    }
                 }
             }
         }
