@@ -434,15 +434,16 @@ void ProductFMC::draw(const std::vector<std::vector<char>> *pagePtr) {
         }
     }
 
-    while (!buf.empty()) {
-        size_t maxLength = std::min<size_t>(63, buf.size());
-        std::vector<uint8_t> usbBuf(buf.begin(), buf.begin() + maxLength);
+    size_t offset = 0;
+    while (offset < buf.size()) {
+        size_t maxLength = std::min<size_t>(63, buf.size() - offset);
+        std::vector<uint8_t> usbBuf(buf.begin() + offset, buf.begin() + offset + maxLength);
         usbBuf.insert(usbBuf.begin(), 0xf2);
         if (maxLength < 63) {
             usbBuf.insert(usbBuf.end(), 63 - maxLength, 0);
         }
         writeData(usbBuf);
-        buf.erase(buf.begin(), buf.begin() + maxLength);
+        offset += maxLength;
     }
 }
 
