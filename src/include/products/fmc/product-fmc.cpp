@@ -52,7 +52,7 @@ ProductFMC::ProductFMC(HIDDeviceHandle hidDevice, uint16_t vendorId, uint16_t pr
                 return;
             }
 
-            std::string fontFile = AppState::getInstance()->readPreference("FMCFont", "");
+            std::string fontFile = AppState::getInstance()->readPreference("FMCFont", "default");
             Logger::getInstance()->info("Reloading active font (\"%s\") on FMC...\n", fontFile.c_str());
 
             setFont(preferredFontVariant);
@@ -485,7 +485,7 @@ void ProductFMC::writeLineToPage(std::vector<std::vector<char>> &page, int line,
         return;
     }
     if (text.length() > ProductFMC::PageCharsPerLine) {
-        Logger::getInstance()->debug("Not writing line %i: Text is too long (%lu) for line.\n", line, text.length());
+        Logger::getInstance()->debug("Not writing line %i: Text is too long (%zu) for line.\n", line, text.length());
         return;
     }
 
@@ -521,23 +521,27 @@ void ProductFMC::setFont(FontVariant preferredVariant) {
     }
 
     preferredFontVariant = preferredVariant;
+
     bool shouldLoadDefaultFont = fontPreference == "default";
     if (!shouldLoadDefaultFont && !Font::IsCustomFontAvailable(fontPreference)) {
-        Logger::getInstance()->critical("Font file not found for font '%s'\n", fontPreference.c_str());
-        AppState::getInstance()->writePreference("FMCFont", "default");
+        Logger::getInstance()->critical("Font file not found for font '%s', using the plugin font for now; the selection is kept\n", fontPreference.c_str());
         shouldLoadDefaultFont = true;
     }
 
     std::vector<std::vector<unsigned char>> font = {};
-    if (shouldLoadDefaultFont) {
-        font = Font::GlyphData(preferredVariant, identifierByte, hardwareType);
-    } else {
+    if (!shouldLoadDefaultFont) {
         font = Font::GlyphData(fontPreference, identifierByte, hardwareType);
+        if (font.empty()) {
+            Logger::getInstance()->critical("Failed to load font data for font '%s', falling back to the plugin font; the selection is kept\n", fontPreference.c_str());
+        }
     }
 
     if (font.empty()) {
-        Logger::getInstance()->critical("Failed to load font data for font '%s'\n", fontPreference.c_str());
-        AppState::getInstance()->writePreference("FMCFont", "default");
+        font = Font::GlyphData(preferredVariant, identifierByte, hardwareType);
+    }
+
+    if (font.empty()) {
+        Logger::getInstance()->critical("No font data available, leaving the current device font in place. Is the fonts/ directory present next to the plugin?\n");
         return;
     }
 

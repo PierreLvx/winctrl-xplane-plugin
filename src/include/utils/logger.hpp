@@ -13,6 +13,15 @@
 #include <XPLMProcessing.h>
 #include <XPLMUtilities.h>
 
+// printf-style checking on the log methods; member functions count `this`, hence 2/3.
+#if defined(__MINGW32__)
+#define WINCTRL_PRINTF_FORMAT __attribute__((format(__MINGW_PRINTF_FORMAT, 2, 3)))
+#elif defined(__GNUC__) || defined(__clang__)
+#define WINCTRL_PRINTF_FORMAT __attribute__((format(printf, 2, 3)))
+#else
+#define WINCTRL_PRINTF_FORMAT
+#endif
+
 enum class LogLevel {
     VERBOSE = 0,
     INFO = 1,
@@ -55,35 +64,35 @@ class Logger {
             return currentLogLevel;
         }
 
-        void debug(const char *format, ...) {
+        void debug(const char *format, ...) WINCTRL_PRINTF_FORMAT {
             va_list args;
             va_start(args, format);
             log(LogLevel::VERBOSE, format, args);
             va_end(args);
         }
 
-        void info(const char *format, ...) {
+        void info(const char *format, ...) WINCTRL_PRINTF_FORMAT {
             va_list args;
             va_start(args, format);
             log(LogLevel::INFO, format, args);
             va_end(args);
         }
 
-        void warn(const char *format, ...) {
+        void warn(const char *format, ...) WINCTRL_PRINTF_FORMAT {
             va_list args;
             va_start(args, format);
             log(LogLevel::WARN, format, args);
             va_end(args);
         }
 
-        void critical(const char *format, ...) {
+        void critical(const char *format, ...) WINCTRL_PRINTF_FORMAT {
             va_list args;
             va_start(args, format);
             log(LogLevel::CRITICAL, format, args);
             va_end(args);
         }
 
-        void logForce(const char *format, ...) {
+        void logForce(const char *format, ...) WINCTRL_PRINTF_FORMAT {
             va_list args;
             va_start(args, format);
             logInternal(LogLevel::CRITICAL, format, args, true);

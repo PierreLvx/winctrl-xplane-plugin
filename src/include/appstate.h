@@ -25,6 +25,12 @@ class AppState {
         std::mutex taskQueueMutex;
         void update();
 
+        // Migration: preferences moved from <plugin>/preferences.ini to
+        // <X-Plane>/Output/preferences/winctrl.ini. Remove the legacy path
+        // handling once users have had a few versions to migrate.
+        std::string getLegacyPreferencesFilePath();
+        void migrateLegacyPreferences();
+
     public:
         static float Update(float inElapsedSinceLastCall, float inElapsedTimeSinceLastFlightLoop, int inCounter, void *inRefcon);
 
@@ -34,6 +40,8 @@ class AppState {
         bool initialize();
         void deinitialize();
         std::string getPluginDirectory();
+        std::string getXPlaneDirectory();
+        std::string getPreferencesFilePath();
 
         void executeAfter(int milliseconds, void *owner, std::function<void()> func);
         void executeAfterDebounced(std::string taskName, int milliseconds, void *owner, std::function<void()> func);

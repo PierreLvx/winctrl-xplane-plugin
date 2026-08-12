@@ -41,6 +41,20 @@ std::string AppState::getPluginDirectory() {
     return "";
 }
 
+std::string AppState::getXPlaneDirectory() {
+    return "";
+}
+
+std::string AppState::getPreferencesFilePath() {
+    return "";
+}
+
+std::string AppState::getLegacyPreferencesFilePath() {
+    return "";
+}
+
+void AppState::migrateLegacyPreferences() {}
+
 void AppState::executeAfter(int /*milliseconds*/, void * /*owner*/, std::function<void()> func) {
     func();
 }

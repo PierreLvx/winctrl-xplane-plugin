@@ -2,13 +2,16 @@
 
 #include "config.h"
 #include "dataref.h"
+#include "path.hpp"
 #include "power-scheme.h"
 #include "SimpleIni.h"
 #include "usbcontroller.h"
 #include "usbdevice.h"
 
 #include <algorithm>
+#include <filesystem>
 #include <fstream>
+#include <system_error>
 #include <XPLMProcessing.h>
 
 AppState *AppState::instance = nullptr;
@@ -186,41 +189,111 @@ void AppState::cancelTasksForOwner(void *owner) {
     cancelledOwners.push_back(owner);
 }
 
-std::string AppState::readPreference(const std::string &key, const std::string &defaultValue) {
+// Looks up a key in one INI file. Returns false when the file or the key is absent,
+// which is what lets the caller fall through to the legacy location.
+static bool readPreferenceFromFile(const std::string &path, const std::string &key, std::string &outValue) {
     CSimpleIniA ini;
     ini.SetUnicode();
-    SI_Error rc = ini.LoadFile((getPluginDirectory() + "/preferences.ini").c_str());
-    if (rc < 0) {
-        return defaultValue;
+    if (ini.LoadFile(utf8ToPath(path).c_str()) < 0) {
+        return false;
     }
 
-    const char *value = ini.GetValue("Preferences", key.c_str(), defaultValue.c_str());
-    return std::string(value);
+    const char *value = ini.GetValue("Preferences", key.c_str(), nullptr);
+    if (!value) {
+        return false;
+    }
+
+    outValue = value;
+    return true;
+}
+
+std::string AppState::readPreference(const std::string &key, const std::string &defaultValue) {
+    migrateLegacyPreferences();
+
+    std::string value;
+    if (readPreferenceFromFile(getPreferencesFilePath(), key, value)) {
+        return value;
+    }
+
+    // Legacy fallback for installs whose migration could not complete (read-only
+    // Output directory, for instance). Safe to delete along with the migration.
+    if (readPreferenceFromFile(getLegacyPreferencesFilePath(), key, value)) {
+        return value;
+    }
+
+    return defaultValue;
 }
 
 void AppState::writePreference(const std::string &key, const std::string &value) {
+    migrateLegacyPreferences();
+
+    const std::filesystem::path path = utf8ToPath(getPreferencesFilePath());
+
+    std::error_code ec;
+    std::filesystem::create_directories(path.parent_path(), ec);
+
     CSimpleIniA ini;
     ini.SetUnicode();
-    SI_Error rc = ini.LoadFile((getPluginDirectory() + "/preferences.ini").c_str());
-    if (rc < 0) {
-        // File might not exist yet, continue
-    }
+    ini.LoadFile(path.c_str()); // File might not exist yet, continue
 
     ini.SetValue("Preferences", key.c_str(), value.c_str());
 
-    rc = ini.SaveFile((getPluginDirectory() + "/preferences.ini").c_str());
-    if (rc < 0) {
+    if (ini.SaveFile(path.c_str()) < 0) {
         Logger::getInstance()->info("Failed to save preferences file.\n");
     }
 }
 
+// Moves <plugin>/preferences.ini to <X-Plane>/Output/preferences/winctrl.ini once.
+// Never overwrites an existing new-location file: that one is authoritative.
+void AppState::migrateLegacyPreferences() {
+    static std::once_flag migrationFlag;
+    std::call_once(migrationFlag, [this]() {
+        const std::filesystem::path legacyPath = utf8ToPath(getLegacyPreferencesFilePath());
+        const std::filesystem::path newPath = utf8ToPath(getPreferencesFilePath());
+
+        std::error_code ec;
+        if (!std::filesystem::exists(legacyPath, ec) || std::filesystem::exists(newPath, ec)) {
+            return;
+        }
+
+        std::filesystem::create_directories(newPath.parent_path(), ec);
+
+        std::filesystem::rename(legacyPath, newPath, ec);
+        if (ec) {
+            // Rename fails across volumes; fall back to copy + remove.
+            ec.clear();
+            std::filesystem::copy_file(legacyPath, newPath, ec);
+            if (ec) {
+                Logger::getInstance()->info("Failed to migrate preferences to %s: %s\n", pathToUtf8(newPath).c_str(), ec.message().c_str());
+                return;
+            }
+
+            std::filesystem::remove(legacyPath, ec);
+        }
+
+        Logger::getInstance()->info("Migrated preferences to %s\n", pathToUtf8(newPath).c_str());
+    });
+}
+
+std::string AppState::getPreferencesFilePath() {
+    return getXPlaneDirectory() + "/Output/preferences/" PRODUCT_NAME ".ini";
+}
+
+std::string AppState::getLegacyPreferencesFilePath() {
+    return getPluginDirectory() + "/preferences.ini";
+}
+
 std::string AppState::getPluginDirectory() {
+    return getXPlaneDirectory() + PLUGIN_DIRECTORY;
+}
+
+std::string AppState::getXPlaneDirectory() {
     char systemPath[512];
     XPLMGetSystemPath(systemPath);
     std::string rootDirectory = systemPath;
-    if (rootDirectory.ends_with("/")) {
-        rootDirectory = rootDirectory.substr(0, rootDirectory.length() - 1); // Remove trailing slash
+    while (rootDirectory.ends_with("/") || rootDirectory.ends_with("\\")) {
+        rootDirectory = rootDirectory.substr(0, rootDirectory.length() - 1);
     }
 
-    return rootDirectory + PLUGIN_DIRECTORY;
+    return rootDirectory;
 }

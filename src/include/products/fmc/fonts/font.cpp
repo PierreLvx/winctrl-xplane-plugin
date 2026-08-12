@@ -2,6 +2,7 @@
 
 #include "appstate.h"
 #include "config.h"
+#include "path.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -54,7 +55,7 @@ const std::string Font::DisplayNameForFile(const std::string &filename) {
 
     // A user font: show the bare filename. Control characters would corrupt the
     // menu, but interior spaces are kept so multi-word names stay readable.
-    std::string name = std::filesystem::path(filename).stem().string();
+    std::string name = pathToUtf8(utf8ToPath(filename).stem());
     name.erase(std::remove_if(name.begin(), name.end(),
                    [](unsigned char c) {
                        return std::iscntrl(c);
@@ -76,10 +77,10 @@ const std::vector<std::vector<unsigned char>> Font::GlyphData(std::string filena
         return {};
     }
 
-    std::filesystem::path fontFile = std::filesystem::path(pluginDirectory) / "fonts" / filename;
+    std::filesystem::path fontFile = utf8ToPath(pluginDirectory) / "fonts" / utf8ToPath(filename);
     std::ifstream file(fontFile, std::ios::binary);
     if (!file) {
-        Logger::getInstance()->critical("Could not open font file: %s\n", fontFile.c_str());
+        Logger::getInstance()->critical("Could not open font file: %s\n", pathToUtf8(fontFile).c_str());
         return {};
     }
 
@@ -95,7 +96,7 @@ const std::vector<std::vector<unsigned char>> Font::GlyphData(std::string filena
         if (file.read(reinterpret_cast<char *>(glyphData.data()), lengthByte)) {
             result.push_back(glyphData);
         } else {
-            Logger::getInstance()->critical("Failed to read glyph data from file: %s\n", fontFile.c_str());
+            Logger::getInstance()->critical("Failed to read glyph data from file: %s\n", pathToUtf8(fontFile).c_str());
             break;
         }
     }
@@ -128,19 +129,24 @@ const std::vector<std::string> Font::ReadCustomFontFiles() {
         return fontFiles;
     }
 
-    std::filesystem::path fontsDirectory = std::filesystem::path(pluginDirectory) / "fonts";
+    std::filesystem::path fontsDirectory = utf8ToPath(pluginDirectory) / "fonts";
 
     try {
         if (std::filesystem::exists(fontsDirectory)) {
             for (const auto &entry : std::filesystem::directory_iterator(fontsDirectory)) {
-                if (entry.is_regular_file() && entry.path().extension() == ".xpwwf") {
-                    fontFiles.push_back(entry.path().filename().string());
+                std::string extension = pathToUtf8(entry.path().extension());
+                std::transform(extension.begin(), extension.end(), extension.begin(), [](unsigned char c) {
+                    return static_cast<char>(std::tolower(c));
+                });
+
+                if (entry.is_regular_file() && extension == ".xpwwf") {
+                    fontFiles.push_back(pathToUtf8(entry.path().filename()));
                 }
             }
         } else {
-            Logger::getInstance()->critical("Fonts directory does not exist: %s\n", fontsDirectory.c_str());
+            Logger::getInstance()->critical("Fonts directory does not exist: %s\n", pathToUtf8(fontsDirectory).c_str());
         }
-    } catch (const std::filesystem::filesystem_error &e) {
+    } catch (const std::exception &e) {
         Logger::getInstance()->critical("Error reading fonts directory: %s\n", e.what());
     }
 

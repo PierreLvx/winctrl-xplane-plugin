@@ -481,6 +481,7 @@
 		F6B520E62FC7676F00A04562 /* xcrafts-erj-ursa-minor-throttle-profile.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "xcrafts-erj-ursa-minor-throttle-profile.h"; sourceTree = "<group>"; };
 		F6B520E72FC7676F00A04562 /* xcrafts-erj-ursa-minor-throttle-profile.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "xcrafts-erj-ursa-minor-throttle-profile.cpp"; sourceTree = "<group>"; };
 		F6B79CFC2F4A5BFD00517E6A /* logger.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = logger.hpp; sourceTree = "<group>"; };
+		F6A0E6F22FDCA55200BEC1AA /* path.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = path.hpp; sourceTree = "<group>"; };
 		F6BB75712E32634700C2B21F /* toliss-fcu-efis-profile.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "toliss-fcu-efis-profile.h"; sourceTree = "<group>"; };
 		F6BB75722E32634700C2B21F /* toliss-fcu-efis-profile.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "toliss-fcu-efis-profile.cpp"; sourceTree = "<group>"; };
 		F6BB75742E32634700C2B21F /* fcu-efis-aircraft-profile.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "fcu-efis-aircraft-profile.h"; sourceTree = "<group>"; };
@@ -863,6 +864,7 @@
 				F65361742FA244A90039C2C9 /* power-scheme.h */,
 				F65361752FA244A90039C2C9 /* power-scheme.cpp */,
 				F6B79CFC2F4A5BFD00517E6A /* logger.hpp */,
+				F6A0E6F22FDCA55200BEC1AA /* path.hpp */,
 				F60BE7C62FA8CA0E00E5C542 /* xplane-version.hpp */,
 				F646535D2FDAFB23001F7640 /* profile-cleanup.h */,
 				F646535E2FDAFB23001F7640 /* profile-cleanup.cpp */,
@@ -1620,7 +1622,7 @@
 					"$(PROJECT_DIR)/SDK/Libraries/Mac",
 					"$(PROJECT_DIR)",
 				);
-				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_OPTIMIZATION_LEVEL = 2;
 				HEADER_SEARCH_PATHS = (
 					"$(XPSDK_ROOT)/CHeaders/Widgets",
 					"$(XPSDK_ROOT)/CHeaders/XPLM",
@@ -1665,6 +1667,7 @@
 					"$(PROJECT_DIR)/SDK/Libraries/Mac",
 					"$(PROJECT_DIR)",
 				);
+				GCC_OPTIMIZATION_LEVEL = 2;
 				HEADER_SEARCH_PATHS = (
 					"$(XPSDK_ROOT)/CHeaders/Widgets",
 					"$(XPSDK_ROOT)/CHeaders/XPLM",
@@ -1936,7 +1939,7 @@
 					"$(PROJECT_DIR)/SDK/Libraries/Mac",
 					"$(PROJECT_DIR)",
 				);
-				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_OPTIMIZATION_LEVEL = 2;
 				HEADER_SEARCH_PATHS = (
 					"$(XPSDK_ROOT)/CHeaders/Widgets",
 					"$(XPSDK_ROOT)/CHeaders/XPLM",

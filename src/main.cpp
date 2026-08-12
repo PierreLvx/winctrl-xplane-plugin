@@ -64,7 +64,7 @@ PLUGIN_API int XPluginStart(char *name, char *sig, char *desc) {
         Logger::getInstance()->setLogLevel(debugLoggingEnabled ? LogLevel::VERBOSE : LogLevel::INFO);
 
         if (debugLoggingEnabled) {
-            Logger::getInstance()->info("Debug logging was enabled for plugin version %s. Currently connected devices (%lu):\n", VERSION, USBController::getInstance()->devices.size());
+            Logger::getInstance()->info("Debug logging was enabled for plugin version %s. Currently connected devices (%zu):\n", VERSION, USBController::getInstance()->devices.size());
 
             if (USBController::getInstance()->devices.empty()) {
                 Logger::getInstance()->info("- No connected devices.\n");
