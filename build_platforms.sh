@@ -49,6 +49,17 @@ fi
 RELEASE_TAG=$VERSION-$XPLANE_VERSION
 SYMBOLS_DIR="build/symbols/$RELEASE_TAG"
 
+# Catches a no-op rebuild re-stripping an already-stripped $BIN, which yields empty debug info.
+MIN_DEBUG_KB=512
+check_debug_size() {
+    SIZE_KB=$(du -sk "$1" 2>/dev/null | awk '{print $1}')
+    if [ -z "$SIZE_KB" ] || [ "$SIZE_KB" -lt "$MIN_DEBUG_KB" ]; then
+        echo "\033[1;31mERROR: debug info at $1 is only ${SIZE_KB:-0}KB - it looks empty.\033[0m"
+        echo "This usually means $BIN was already stripped by a previous run and make didn't relink it this time. Do a clean build and try again."
+        exit 1
+    fi
+}
+
 echo "Building with SDK version $SDK_VERSION\n"
 
 echo "Clean build directory? (y/n) [default: n]:"
@@ -95,24 +106,25 @@ for platform in $PLATFORMS; do
     fi
 
     if [ $? -eq 0 ]; then
-        # Split debug info out before stripping so release .xpl files stay
-        # small, but crashes from a shipped build can still be symbolicated
-        # from the matching archive in build/symbols/.
+        # Archive debug info to build/symbols/ before stripping the shipped .xpl.
         mkdir -p "$SYMBOLS_DIR/${platform}_x64"
         case $platform in
             mac)
                 dsymutil "$BIN" -o "$BIN.dSYM"
+                check_debug_size "$BIN.dSYM"
                 strip -x "$BIN"
                 cp -r "$BIN.dSYM" "$SYMBOLS_DIR/${platform}_x64/"
                 ;;
             win)
                 x86_64-w64-mingw32-objcopy --only-keep-debug "$BIN" "$BIN.debug"
+                check_debug_size "$BIN.debug"
                 x86_64-w64-mingw32-strip -s "$BIN"
                 x86_64-w64-mingw32-objcopy --add-gnu-debuglink="$BIN.debug" "$BIN"
                 cp "$BIN.debug" "$SYMBOLS_DIR/${platform}_x64/"
                 ;;
             lin)
-                # objcopy/strip already ran inside the docker container above.
+                # objcopy/strip already ran in the docker container above.
+                check_debug_size "$BIN.debug"
                 cp "$BIN.debug" "$SYMBOLS_DIR/${platform}_x64/"
                 ;;
         esac
