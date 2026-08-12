@@ -144,10 +144,10 @@ struct FMCButtonDef {
 // the connected hardware whenever a font is loaded, so the 14 display rows line up
 // with the physical LSK keys.
 struct FMCScreenLayout {
-        unsigned char characterHeight;
-        unsigned char characterWidth;
-        unsigned char x;
-        unsigned char y;
+        unsigned char characterHeight = 29;
+        unsigned char characterWidth = 23;
+        unsigned char x = 16;
+        unsigned char y = 17;
 };
 
 class FMCHardwareMapping {

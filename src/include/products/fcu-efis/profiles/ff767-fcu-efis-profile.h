@@ -10,8 +10,8 @@
 class FF767FCUEfisProfile : public FCUEfisAircraftProfile {
     private:
         bool isTestMode();
-        bool isStdCaptain;
-        bool isStdFirstOfficer;
+        bool isStdCaptain = false;
+        bool isStdFirstOfficer = false;
 
     public:
         FF767FCUEfisProfile(ProductFCUEfis *product);

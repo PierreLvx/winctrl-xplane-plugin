@@ -176,8 +176,8 @@ class Logger {
         std::mutex queueMutex;
         std::queue<std::string> pending;
         std::thread::id mainThreadId;
-        std::atomic<bool> initialized;
-        std::atomic<LogLevel> currentLogLevel;
+        std::atomic<bool> initialized{false};
+        std::atomic<LogLevel> currentLogLevel{LogLevel::INFO};
 };
 
 #endif

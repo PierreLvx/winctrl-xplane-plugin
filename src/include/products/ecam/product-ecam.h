@@ -32,10 +32,10 @@ enum class ECAMLed : int {
 
 class ProductECAM : public USBDevice {
     private:
-        ECAMAircraftProfile *profile;
-        int menuItemId;
-        uint64_t lastButtonStateLo;
-        uint32_t lastButtonStateHi;
+        ECAMAircraftProfile *profile = nullptr;
+        int menuItemId = -1;
+        uint64_t lastButtonStateLo = 0;
+        uint32_t lastButtonStateHi = 0;
         std::set<int> pressedButtonIndices;
 
         void setProfileForCurrentAircraft();

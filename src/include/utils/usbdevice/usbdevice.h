@@ -27,17 +27,17 @@ typedef int HIDDeviceHandle;
 #endif
 
 struct InputEvent {
-        int reportId;
+        int reportId = 0;
         std::vector<uint8_t> reportData;
-        int reportLength;
+        int reportLength = 0;
 };
 
 // A group of product IDs the user can switch off in the plugins menu, so that
 // another tool (MobiFlight, SimAppPro) can own the hardware instead.
 struct DeviceFamily {
         // Stored in preferences.ini; must stay stable across releases.
-        const char *preferenceKey;
-        const char *name;
+        const char *preferenceKey = nullptr;
+        const char *name = nullptr;
         std::vector<uint16_t> productIds;
 };
 

@@ -19,10 +19,10 @@ class ProductPAP3MCP : public USBDevice {
 
     private:
         uint8_t packetNumber = 1;
-        PAP3MCPAircraftProfile *profile;
-        int menuItemId;
+        PAP3MCPAircraftProfile *profile = nullptr;
+        int menuItemId = -1;
         PAP3MCPDisplayData displayData;
-        int lastUpdateCycle;
+        int lastUpdateCycle = 0;
         int displayUpdateFrameCounter = 0;
         std::set<int> pressedButtonIndices;
 

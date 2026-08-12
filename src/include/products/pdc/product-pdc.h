@@ -12,10 +12,10 @@ enum class PDCLed : int {
 
 class ProductPDC : public USBDevice {
     private:
-        PDCAircraftProfile *profile;
-        int menuItemId;
-        uint64_t lastButtonStateLo;
-        uint32_t lastButtonStateHi;
+        PDCAircraftProfile *profile = nullptr;
+        int menuItemId = -1;
+        uint64_t lastButtonStateLo = 0;
+        uint32_t lastButtonStateHi = 0;
         std::set<int> pressedButtonIndices;
 
         void setProfileForCurrentAircraft();

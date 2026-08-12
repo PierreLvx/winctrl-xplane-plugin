@@ -48,7 +48,7 @@ namespace std {
 
 class PDCAircraftProfile {
     protected:
-        ProductPDC *product;
+        ProductPDC *product = nullptr;
         std::unordered_map<std::string, int> datarefChangedCache = {};
 
     public:

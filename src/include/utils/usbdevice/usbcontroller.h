@@ -32,7 +32,7 @@ typedef int HIDDeviceHandle;
 
 class USBController {
     private:
-        HIDManagerHandle hidManager;
+        HIDManagerHandle hidManager = nullptr;
         std::atomic<bool> shouldShutdown{false};
 
         // Guards devices (and the per-platform path/pending tracking) against

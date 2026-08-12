@@ -24,7 +24,7 @@ struct RMPButtonDef {
 
 class RMPAircraftProfile {
     protected:
-        ProductRMP *product;
+        ProductRMP *product = nullptr;
 
     public:
         RMPAircraftProfile(ProductRMP *product) : product(product) {};

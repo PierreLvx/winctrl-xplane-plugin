@@ -6,8 +6,8 @@
 
 class ProductOrionThrottle : public USBDevice {
     private:
-        OrionThrottleAircraftProfile *profile;
-        int menuItemId;
+        OrionThrottleAircraftProfile *profile = nullptr;
+        int menuItemId = -1;
 
         int lastVibration = 0;
         float lastGForce = 1.0f;
@@ -19,7 +19,7 @@ class ProductOrionThrottle : public USBDevice {
         ProductOrionThrottle(HIDDeviceHandle hidDevice, uint16_t vendorId, uint16_t productId, std::string vendorName, std::string productName);
         ~ProductOrionThrottle();
 
-        float vibrationMultiplier;
+        float vibrationMultiplier = 1.0f;
 
         const char *classIdentifier() override;
         const char *activeProfileName() const override;

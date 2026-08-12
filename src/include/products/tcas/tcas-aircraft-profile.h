@@ -25,7 +25,7 @@ struct TCASButtonDef {
 
 class TCASAircraftProfile {
     protected:
-        ProductTCAS *product;
+        ProductTCAS *product = nullptr;
 
     public:
         TCASAircraftProfile(ProductTCAS *product) : product(product) {};

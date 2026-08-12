@@ -115,7 +115,7 @@ struct EfisDisplayValue {
         bool displayEnabled = true;
         bool displayTest = false;
         std::string baro;
-        bool unitIsInHg;
+        bool unitIsInHg = false;
         bool isStd = false;
         bool showQfe = false;
 
@@ -219,7 +219,7 @@ class ProductFCUEfis;
 
 class FCUEfisAircraftProfile {
     protected:
-        ProductFCUEfis *product;
+        ProductFCUEfis *product = nullptr;
 
     public:
         FCUEfisAircraftProfile(ProductFCUEfis *product) :

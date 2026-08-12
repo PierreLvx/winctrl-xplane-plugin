@@ -32,9 +32,9 @@ class PluginsMenu {
         ~PluginsMenu();
         static PluginsMenu *instance;
 
-        XPLMMenuID mainMenuId;
-        int mainMenuItemIndex;
-        int nextItemId;
+        XPLMMenuID mainMenuId = nullptr;
+        int mainMenuItemIndex = -1;
+        int nextItemId = 0;
         std::map<int, std::pair<int, std::function<void(int)>>> menuCallbacks; // itemId -> (itemIndex, callback)
         std::map<int, std::string> itemNames;                                  // itemId -> name
         std::map<int, bool> persistentItems;                                   // itemId -> isPersistent

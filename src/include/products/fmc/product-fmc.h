@@ -11,15 +11,15 @@
 
 class ProductFMC : public USBDevice {
     private:
-        FMCAircraftProfile *profile;
+        FMCAircraftProfile *profile = nullptr;
         std::vector<std::vector<char>> page;
-        int lastUpdateCycle;
+        int lastUpdateCycle = 0;
         int displayUpdateFrameCounter = 0;
         std::set<int> pressedButtonIndices;
-        uint64_t lastButtonStateLo;
-        uint32_t lastButtonStateHi;
-        int menuItemId;
-        int fontsMenuItemId;
+        uint64_t lastButtonStateLo = 0;
+        uint32_t lastButtonStateHi = 0;
+        int menuItemId = -1;
+        int fontsMenuItemId = -1;
         FontVariant preferredFontVariant = FontVariant::Default;
 
         void draw(const std::vector<std::vector<char>> *pagePtr = nullptr);

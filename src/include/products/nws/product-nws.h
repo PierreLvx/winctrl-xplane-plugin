@@ -14,8 +14,8 @@ enum class NWSLed : int {
 
 class ProductNWS : public USBDevice {
     private:
-        NWSAircraftProfile *profile;
-        int menuItemId;
+        NWSAircraftProfile *profile = nullptr;
+        int menuItemId = -1;
         std::unordered_map<int, uint8_t> lastLedBrightness;
 
         void setProfileForCurrentAircraft();

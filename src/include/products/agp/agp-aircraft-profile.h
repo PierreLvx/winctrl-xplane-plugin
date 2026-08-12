@@ -25,7 +25,7 @@ struct AGPButtonDef {
 
 class AGPAircraftProfile {
     protected:
-        ProductAGP *product;
+        ProductAGP *product = nullptr;
 
     public:
         AGPAircraftProfile(ProductAGP *product) : product(product) {};

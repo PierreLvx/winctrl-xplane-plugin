@@ -10,10 +10,10 @@
 class ProductFCUEfis : public USBDevice {
     private:
         uint8_t packetNumber = 1;
-        FCUEfisAircraftProfile *profile;
-        int menuItemId;
+        FCUEfisAircraftProfile *profile = nullptr;
+        int menuItemId = -1;
         FCUDisplayData displayData;
-        int lastUpdateCycle;
+        int lastUpdateCycle = 0;
         int displayUpdateFrameCounter = 0;
         std::set<int> pressedButtonIndices;
         std::map<std::string, int> selectorPositions;

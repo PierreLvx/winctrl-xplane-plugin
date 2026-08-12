@@ -6,8 +6,8 @@
 
 class ProductJoystick : public USBDevice {
     private:
-        JoystickAircraftProfile *profile;
-        int menuItemId;
+        JoystickAircraftProfile *profile = nullptr;
+        int menuItemId = -1;
 
         int lastVibration = 0;
         float lastGForce = 1.0f;

@@ -17,7 +17,7 @@ struct ECAMButtonDef {
 
 class ECAMAircraftProfile {
     protected:
-        ProductECAM *product;
+        ProductECAM *product = nullptr;
 
     public:
         ECAMAircraftProfile(ProductECAM *product) : product(product) {};

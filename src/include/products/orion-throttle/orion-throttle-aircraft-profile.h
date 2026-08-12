@@ -7,7 +7,7 @@ class USBDevice;
 
 class OrionThrottleAircraftProfile {
     protected:
-        USBDevice *product;
+        USBDevice *product = nullptr;
 
     public:
         OrionThrottleAircraftProfile(USBDevice *product) : product(product) {};

@@ -9,7 +9,7 @@
 
 struct DelayedTask {
         std::string name;
-        void *owner;
+        void *owner = nullptr;
         std::chrono::steady_clock::time_point runAt;
         std::function<void()> func;
 };
@@ -34,7 +34,7 @@ class AppState {
     public:
         static float Update(float inElapsedSinceLastCall, float inElapsedTimeSinceLastFlightLoop, int inCounter, void *inRefcon);
 
-        bool pluginInitialized;
+        bool pluginInitialized = false;
 
         static AppState *getInstance();
         bool initialize();

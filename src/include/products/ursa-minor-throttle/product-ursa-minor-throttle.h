@@ -20,10 +20,10 @@ enum class UrsaMinorThrottleLed : int {
 
 class ProductUrsaMinorThrottle : public USBDevice {
     private:
-        UrsaMinorThrottleAircraftProfile *profile;
-        int menuItemId;
-        uint64_t lastButtonStateLo;
-        uint32_t lastButtonStateHi;
+        UrsaMinorThrottleAircraftProfile *profile = nullptr;
+        int menuItemId = -1;
+        uint64_t lastButtonStateLo = 0;
+        uint32_t lastButtonStateHi = 0;
         std::set<int> pressedButtonIndices;
         uint8_t packetNumber = 1;
 
@@ -39,7 +39,7 @@ class ProductUrsaMinorThrottle : public USBDevice {
 
         static constexpr unsigned char ThrottleIdentifierByte = 0x10;
         static constexpr unsigned char PACIdentifierByte = 0x01;
-        float vibrationMultiplier;
+        float vibrationMultiplier = 1.0f;
 
         const char *classIdentifier() override;
         const char *activeProfileName() const override;

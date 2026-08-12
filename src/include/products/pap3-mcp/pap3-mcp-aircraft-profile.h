@@ -101,7 +101,7 @@ struct PAP3MCPDisplayData {
 };
 
 struct PAP3MCPEncoderDef {
-        int id;
+        int id = 0;
         std::string name;
         std::string incCmd;
         std::string decCmd;
@@ -111,7 +111,7 @@ class ProductPAP3MCP;
 
 class PAP3MCPAircraftProfile {
     protected:
-        ProductPAP3MCP *product;
+        ProductPAP3MCP *product = nullptr;
 
     public:
         PAP3MCPAircraftProfile(ProductPAP3MCP *product) :

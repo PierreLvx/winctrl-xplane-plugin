@@ -10,7 +10,7 @@ class USBDevice;
 
 class JoystickAircraftProfile {
     protected:
-        USBDevice *product;
+        USBDevice *product = nullptr;
 
     public:
         JoystickAircraftProfile(USBDevice *product) : product(product) {};

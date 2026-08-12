@@ -7,7 +7,7 @@ class ProductNWS;
 
 class NWSAircraftProfile {
     protected:
-        ProductNWS *product;
+        ProductNWS *product = nullptr;
 
     public:
         NWSAircraftProfile(ProductNWS *product) : product(product) {};

@@ -98,7 +98,7 @@ class ProductFMC;
 
 class FMCAircraftProfile {
     protected:
-        ProductFMC *product;
+        ProductFMC *product = nullptr;
 
     public:
         FMCAircraftProfile(ProductFMC *product) :

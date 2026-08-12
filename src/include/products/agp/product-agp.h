@@ -39,11 +39,11 @@ enum class AGPTerrainNDPreference {
 
 class ProductAGP : public USBDevice {
     private:
-        AGPAircraftProfile *profile;
-        int menuItemId;
+        AGPAircraftProfile *profile = nullptr;
+        int menuItemId = -1;
         int displayUpdateFrameCounter = 0;
-        uint64_t lastButtonStateLo;
-        uint32_t lastButtonStateHi;
+        uint64_t lastButtonStateLo = 0;
+        uint32_t lastButtonStateHi = 0;
         std::set<int> pressedButtonIndices;
         uint8_t packetNumber = 1;
 
@@ -56,7 +56,7 @@ class ProductAGP : public USBDevice {
 
         static constexpr unsigned char IdentifierByte = 0x80;
 
-        AGPTerrainNDPreference terrainNDPreference;
+        AGPTerrainNDPreference terrainNDPreference = AGPTerrainNDPreference::FIRST_OFFICER;
 
         const char *classIdentifier() override;
         const char *activeProfileName() const override;

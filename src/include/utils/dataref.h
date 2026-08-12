@@ -22,25 +22,25 @@ template<typename T>
 using DatarefMonitorChangedCallback = std::function<void(T)>;
 
 struct TaggedCallback {
-        void *owner;
+        void *owner = nullptr;
         DatarefShouldChangeCallback<DataRefValueType> func;
 };
 
 struct BoundRef {
-        XPLMDataRef handle;
-        void *valuePointer;
+        XPLMDataRef handle = nullptr;
+        void *valuePointer = nullptr;
         std::vector<TaggedCallback> changeCallbacks;
 };
 
 typedef std::function<void(XPLMCommandPhase inPhase)> CommandExecutedCallback;
 
 struct TaggedCommandCallback {
-        void *owner;
+        void *owner = nullptr;
         CommandExecutedCallback func;
 };
 
 struct BoundCommand {
-        XPLMCommandRef handle;
+        XPLMCommandRef handle = nullptr;
         std::vector<TaggedCommandCallback> callbacks;
 };
 

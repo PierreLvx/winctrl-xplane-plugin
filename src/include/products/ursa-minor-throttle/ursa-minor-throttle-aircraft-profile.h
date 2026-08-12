@@ -28,7 +28,7 @@ struct UrsaMinorThrottleButtonDef {
 
 class UrsaMinorThrottleAircraftProfile {
     protected:
-        ProductUrsaMinorThrottle *product;
+        ProductUrsaMinorThrottle *product = nullptr;
         std::unordered_map<std::string, int> datarefChangedCache = {};
 
     public:

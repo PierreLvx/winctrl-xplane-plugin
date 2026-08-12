@@ -18,11 +18,11 @@ enum class TCASLed : int {
 
 class ProductTCAS : public USBDevice {
     private:
-        TCASAircraftProfile *profile;
-        int menuItemId;
+        TCASAircraftProfile *profile = nullptr;
+        int menuItemId = -1;
         int displayUpdateFrameCounter = 0;
-        uint64_t lastButtonStateLo;
-        uint32_t lastButtonStateHi;
+        uint64_t lastButtonStateLo = 0;
+        uint32_t lastButtonStateHi = 0;
         std::set<int> pressedButtonIndices;
         uint8_t packetNumber = 1;
         uint64_t lastUpdateCycle = 0;
