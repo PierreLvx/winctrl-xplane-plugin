@@ -41,6 +41,25 @@ fi
 SDK_VERSION=$(grep "#define kXPLM_Version" SDK/CHeaders/XPLM/XPLMDefs.h | awk '{print $3}' | tr -d '()')
 JOBS=$(nproc 2>/dev/null || sysctl -n hw.logicalcpu 2>/dev/null || echo 4)
 
+if [ $SDK_VERSION -lt 400 ]; then
+    XPLANE_VERSION=XP11
+else
+    XPLANE_VERSION=XP12
+fi
+RELEASE_TAG=$VERSION-$XPLANE_VERSION
+SYMBOLS_DIR="build/symbols/$RELEASE_TAG"
+
+# Catches a no-op rebuild re-stripping an already-stripped $BIN, which yields empty debug info.
+MIN_DEBUG_KB=512
+check_debug_size() {
+    SIZE_KB=$(du -sk "$1" 2>/dev/null | awk '{print $1}')
+    if [ -z "$SIZE_KB" ] || [ "$SIZE_KB" -lt "$MIN_DEBUG_KB" ]; then
+        echo "\033[1;31mERROR: debug info at $1 is only ${SIZE_KB:-0}KB - it looks empty.\033[0m"
+        echo "This usually means $BIN was already stripped by a previous run and make didn't relink it this time. Do a clean build and try again."
+        exit 1
+    fi
+}
+
 echo "Building with SDK version $SDK_VERSION\n"
 
 echo "Clean build directory? (y/n) [default: n]:"
@@ -66,26 +85,53 @@ fi
 
 for platform in $PLATFORMS; do
     echo "Building $platform..."
+    BIN="build/$platform/${platform}_x64/${PROJECT_NAME}.xpl"
     if [ $platform = "lin" ]; then
         docker build -t xplane-build:jammy-gcc13 -f ./docker/Dockerfile.linux . && \
         docker run --user $(id -u):$(id -g) --rm -v $(pwd):/src -w /src xplane-build:jammy-gcc13 bash -c "\
         cmake -DCMAKE_CXX_FLAGS='-march=x86-64' -DCMAKE_TOOLCHAIN_FILE=toolchain-$platform.cmake -DSDK_VERSION=$SDK_VERSION -Bbuild/$platform -H. && \
         make -C build/$platform -j\$(nproc) && \
-        if objdump -T build/$platform/${platform}_x64/${PROJECT_NAME}.xpl | grep -q '__isoc23_'; then \
+        if objdump -T $BIN | grep -q '__isoc23_'; then \
             echo 'ERROR: this build links post-glibc-2.36 symbols:'; \
-            objdump -T build/$platform/${platform}_x64/${PROJECT_NAME}.xpl | grep -o '__isoc23_[a-z]*' | sort -u; \
+            objdump -T $BIN | grep -o '__isoc23_[a-z]*' | sort -u; \
             echo 'The Linux image base is too new; the plugin will not load on older distros. See docker/Dockerfile.linux.'; \
             exit 1; \
-        fi"
+        fi && \
+        objcopy --only-keep-debug $BIN $BIN.debug && \
+        strip --strip-debug --strip-unneeded $BIN && \
+        objcopy --add-gnu-debuglink=$BIN.debug $BIN"
     else
         cmake -DCMAKE_TOOLCHAIN_FILE=toolchain-$platform.cmake -DSDK_VERSION=$SDK_VERSION -Bbuild/$platform -H.
         make -C build/$platform -j$JOBS
     fi
 
     if [ $? -eq 0 ]; then
+        # Archive debug info to build/symbols/ before stripping the shipped .xpl.
+        mkdir -p "$SYMBOLS_DIR/${platform}_x64"
+        case $platform in
+            mac)
+                dsymutil "$BIN" -o "$BIN.dSYM"
+                check_debug_size "$BIN.dSYM"
+                strip -x "$BIN"
+                cp -r "$BIN.dSYM" "$SYMBOLS_DIR/${platform}_x64/"
+                ;;
+            win)
+                x86_64-w64-mingw32-objcopy --only-keep-debug "$BIN" "$BIN.debug"
+                check_debug_size "$BIN.debug"
+                x86_64-w64-mingw32-strip -s "$BIN"
+                x86_64-w64-mingw32-objcopy --add-gnu-debuglink="$BIN.debug" "$BIN"
+                cp "$BIN.debug" "$SYMBOLS_DIR/${platform}_x64/"
+                ;;
+            lin)
+                # objcopy/strip already ran in the docker container above.
+                check_debug_size "$BIN.debug"
+                cp "$BIN.debug" "$SYMBOLS_DIR/${platform}_x64/"
+                ;;
+        esac
+
         echo "\n\n"
-        echo "\033[1;32m$platform build succeeded.\033[0m\nProduct: build/$platform/${platform}_x64/${PROJECT_NAME}.xpl"
-        file build/$platform/${platform}_x64/${PROJECT_NAME}.xpl
+        echo "\033[1;32m$platform build succeeded.\033[0m\nProduct: $BIN"
+        file $BIN
         sleep 3
     else
         echo "\033[1;31m$platform build failed.\033[0m"
@@ -117,13 +163,7 @@ fi
 cd build
 mv dist $PROJECT_NAME
 
-if [ $SDK_VERSION -lt 400 ]; then
-    XPLANE_VERSION=XP11
-else
-    XPLANE_VERSION=XP12
-fi
-
-VERSION=$VERSION-$XPLANE_VERSION
+VERSION=$RELEASE_TAG
 
 rm -f $PROJECT_NAME-$VERSION.zip
 zip -rq $PROJECT_NAME-$VERSION.zip $PROJECT_NAME -x "*/.DS_Store" -x "*/__MACOSX/*"
@@ -132,6 +172,7 @@ mv $PROJECT_NAME dist
 cd ..
 
 echo "Bundle created. Distribution: build/dist/$PROJECT_NAME-$VERSION.zip"
+echo "Debug symbols archived: $SYMBOLS_DIR (keep this if you need to symbolicate crashes from this release)"
 
 # Upload to Google Drive if requested and gdrive is available
 if [ "$UPLOAD_TO_DRIVE" = "y" ] && command -v gdrive &> /dev/null; then
