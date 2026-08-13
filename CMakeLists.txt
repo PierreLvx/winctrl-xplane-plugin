@@ -7,8 +7,14 @@ SET(CMAKE_CXX_STANDARD 23)
 SET(CMAKE_CXX_STANDARD_REQUIRED ON)
 # This is the distribution path: build_platforms.sh drives it for all three platforms, so it optimises.
 # Debug builds come from the Xcode project instead, with its own settings, and nothing here caters to them.
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2")
-SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2")
+# -g1 is intentional here too: build_platforms.sh splits the DWARF/debug info
+# out into build/symbols/ and strips the shipped .xpl afterwards, so crashes
+# reported against a release build can still be symbolicated (function + line)
+# from the archive. Plain -g2 (what -g implies) was tried and rejected: across
+# this codebase's heavy template/header use it produced 150+MB of per-variable
+# location debug info per platform for no symbolication benefit -g1 lacks.
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -g1")
+SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2 -g1")
 PROJECT(winctrl C CXX)
 
 IF(APPLE)
