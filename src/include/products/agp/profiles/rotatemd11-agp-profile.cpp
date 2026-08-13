@@ -129,13 +129,7 @@ void RotateMD11AGPProfile::updateDisplays() {
     }
 
     double zuluTime = Dataref::getInstance()->get<double>("sim/time/zulu_time_sec");
-    int hours = static_cast<int>(zuluTime / 3600) % 24;
-    int minutes = static_cast<int>(zuluTime / 60) % 60;
-    int seconds = static_cast<int>(zuluTime) % 60;
-
-    std::string utc = SegmentDisplay::fixStringLength(std::to_string(hours), 2) + ":" +
-                      SegmentDisplay::fixStringLength(std::to_string(minutes), 2) + ":" +
-                      SegmentDisplay::fixStringLength(std::to_string(seconds), 2);
+    std::string utc = SegmentDisplay::formatTimeFromSecondsOfDay(zuluTime);
 
     product->setLCDText("", utc, "");
 }

@@ -24,6 +24,16 @@ namespace SegmentDisplay {
     // Fix string length with leading zeros
     std::string fixStringLength(const std::string &value, int length, char fillChar = '0');
 
+    // Formats a day-of-year (1-based, e.g. sim/time/local_date_days + 1) as
+    // "MM:DD:YY" using the current calendar year.
+    std::string formatDateFromDayOfYear(int dayOfYear);
+
+    // Formats a seconds-since-midnight value (e.g. sim/time/zulu_time_sec) as "HH:MM:SS"
+    std::string formatTimeFromSecondsOfDay(double secondsOfDay);
+
+    // Formats an elapsed-seconds value (e.g. a chronograph reading) as "MM:SS"
+    std::string formatSecondsAsMinSec(float totalSeconds);
+
     // Swap nibbles in a byte
     uint8_t swapNibbles(uint8_t value);
 
