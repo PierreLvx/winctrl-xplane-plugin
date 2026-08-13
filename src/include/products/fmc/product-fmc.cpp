@@ -420,6 +420,7 @@ void ProductFMC::draw(const std::vector<std::vector<char>> *pagePtr) {
 
     const auto &p = pagePtr ? *pagePtr : page;
     std::vector<uint8_t> buf;
+    // Page size is fixed, so grab the right-sized buffer up front and skip the reallocations.
     buf.reserve(ProductFMC::PageLines * ProductFMC::PageCharsPerLine * ProductFMC::PageBytesPerChar);
 
     for (int i = 0; i < ProductFMC::PageLines; ++i) {
