@@ -27,7 +27,7 @@ FF777UrsaMinorThrottleProfile::FF777UrsaMinorThrottleProfile(ProductUrsaMinorThr
         this);
 
     Dataref::getInstance()->monitorExistingDataref<bool>("1-sim/output/mcp/ok", [product](bool hasPower) {
-        Dataref::getInstance()->executeChangedCallbacksForDataref("1-sim/ckpt/lights/glareshield");
+        Dataref::getInstance()->executeChangedCallbacksForDataref("1-sim/ckpt/lights/aisle");
     },
         this);
 
