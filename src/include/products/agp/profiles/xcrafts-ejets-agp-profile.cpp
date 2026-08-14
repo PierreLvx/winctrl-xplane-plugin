@@ -82,7 +82,13 @@ void XCraftsEjetsAGPProfile::buttonPressed(const AGPButtonDef *button, XPLMComma
     auto datarefManager = Dataref::getInstance();
 
     if (button->datarefType == AGPDatarefType::LANDING_GEAR) {
-        datarefManager->executeCommand(button->dataref.c_str(), phase);
+        // The lever is a maintained switch: holding the command down would keep
+        // asserting the position every frame and override external changes.
+        if (phase != xplm_CommandBegin) {
+            return;
+        }
+
+        datarefManager->executeCommand(button->dataref.c_str(), -1);
     } else if (button->datarefType == AGPDatarefType::SET_VALUE) {
         if (phase != xplm_CommandBegin) {
             return;

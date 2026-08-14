@@ -101,8 +101,8 @@ const std::unordered_map<uint16_t, AGPButtonDef> &RotateMD11AGPProfile::buttonDe
         {20, {"ET switch STP", ""}},
         {21, {"ET switch RST", ""}},
         {22, {"TERR ON ND", ""}},
-        {23, {"GEAR UP", "sim/flight_controls/landing_gear_up"}},
-        {24, {"GEAR DOWN", "sim/flight_controls/landing_gear_down"}},
+        {23, {"GEAR UP", "sim/flight_controls/landing_gear_up", AGPDatarefType::LANDING_GEAR, 0}},
+        {24, {"GEAR DOWN", "sim/flight_controls/landing_gear_down", AGPDatarefType::LANDING_GEAR, 1}},
     };
     return buttons;
 }
@@ -113,7 +113,15 @@ void RotateMD11AGPProfile::buttonPressed(const AGPButtonDef *button, XPLMCommand
     }
 
     auto datarefManager = Dataref::getInstance();
-    if (button->datarefType == AGPDatarefType::SET_VALUE) {
+    if (button->datarefType == AGPDatarefType::LANDING_GEAR) {
+        // The lever is a maintained switch: holding the command down would keep
+        // asserting the position every frame and override external changes.
+        if (phase != xplm_CommandBegin) {
+            return;
+        }
+
+        datarefManager->executeCommand(button->dataref.c_str(), -1);
+    } else if (button->datarefType == AGPDatarefType::SET_VALUE) {
         if (phase != xplm_CommandBegin) {
             return;
         }
