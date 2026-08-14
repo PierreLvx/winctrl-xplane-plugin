@@ -1,6 +1,9 @@
 #include "segment-display.h"
 
 #include <algorithm>
+#include <chrono>
+#include <cmath>
+#include <ctime>
 #include <map>
 
 namespace SegmentDisplay {
@@ -201,6 +204,52 @@ namespace SegmentDisplay {
             result = fillChar + result;
         }
         return result;
+    }
+
+    std::string formatDateFromDayOfYear(int dayOfYear) {
+        auto now = std::chrono::system_clock::now();
+        std::time_t time = std::chrono::system_clock::to_time_t(now);
+        struct tm *timeinfo = std::localtime(&time);
+        int year = timeinfo->tm_year + 1900;
+
+        int month = 1;
+        int day = dayOfYear;
+        int daysInMonth[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+
+        if ((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)) {
+            daysInMonth[1] = 29;
+        }
+
+        for (int i = 0; i < 12; i++) {
+            if (day <= daysInMonth[i]) {
+                month = i + 1;
+                break;
+            }
+            day -= daysInMonth[i];
+        }
+
+        return (month < 10 ? "0" : "") + std::to_string(month) + ":" +
+               (day < 10 ? "0" : "") + std::to_string(day) + ":" +
+               std::to_string(year % 100);
+    }
+
+    std::string formatTimeFromSecondsOfDay(double secondsOfDay) {
+        int hours = static_cast<int>(secondsOfDay / 3600) % 24;
+        int minutes = static_cast<int>(secondsOfDay / 60) % 60;
+        int seconds = static_cast<int>(secondsOfDay) % 60;
+
+        return fixStringLength(std::to_string(hours), 2) + ":" +
+               fixStringLength(std::to_string(minutes), 2) + ":" +
+               fixStringLength(std::to_string(seconds), 2);
+    }
+
+    std::string formatSecondsAsMinSec(float totalSeconds) {
+        int seconds = static_cast<int>(std::floor(totalSeconds));
+        int mins = seconds / 60;
+        int secs = seconds % 60;
+
+        return fixStringLength(std::to_string(mins), 2) + ":" +
+               fixStringLength(std::to_string(secs), 2);
     }
 
     std::vector<uint8_t> encodeString(int numSegments, const std::string &str) {

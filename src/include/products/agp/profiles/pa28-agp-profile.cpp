@@ -7,9 +7,6 @@
 #include "logger.hpp"
 
 #include <algorithm>
-#include <chrono>
-#include <cmath>
-#include <ctime>
 
 PA28AGPProfile::PA28AGPProfile(ProductAGP *product) : AGPAircraftProfile(product) {
     // Same lighting approach as the PA28 FCU profile: LCD and LEDs on with battery power,
@@ -116,52 +113,16 @@ void PA28AGPProfile::updateDisplays() {
     float chronoSeconds = datarefManager->get<float>("sim/time/timer_elapsed_time_sec");
     bool chronoRunning = datarefManager->get<bool>("sim/time/timer_is_running_sec");
     if (chronoRunning || chronoSeconds > std::numeric_limits<float>::epsilon()) {
-        int totalSeconds = static_cast<int>(std::floor(chronoSeconds));
-        int mins = totalSeconds / 60;
-        int secs = totalSeconds % 60;
-        chrono = SegmentDisplay::fixStringLength(std::to_string(mins), 2) + ":" +
-                 SegmentDisplay::fixStringLength(std::to_string(secs), 2);
+        chrono = SegmentDisplay::formatSecondsAsMinSec(chronoSeconds);
     }
 
     std::string utc = "";
     if (showDate) {
         int dayOfYear = datarefManager->get<int>("sim/time/local_date_days") + 1;
-
-        auto now = std::chrono::system_clock::now();
-        std::time_t time = std::chrono::system_clock::to_time_t(now);
-        struct tm *timeinfo = std::localtime(&time);
-        int year = timeinfo->tm_year + 1900;
-
-        // Calculate month and day from day of year
-        int month = 1;
-        int day = dayOfYear;
-        int daysInMonth[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
-
-        if ((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)) {
-            daysInMonth[1] = 29;
-        }
-
-        for (int i = 0; i < 12; i++) {
-            if (day <= daysInMonth[i]) {
-                month = i + 1;
-                break;
-            }
-            day -= daysInMonth[i];
-        }
-
-        utc = (month < 10 ? "0" : "") + std::to_string(month) + ":" +
-              (day < 10 ? "0" : "") + std::to_string(day) + ":" +
-              std::to_string(year % 100);
+        utc = SegmentDisplay::formatDateFromDayOfYear(dayOfYear);
     } else {
         double zuluTime = datarefManager->get<double>("sim/time/zulu_time_sec");
-
-        int hours = static_cast<int>(zuluTime / 3600) % 24;
-        int minutes = static_cast<int>(zuluTime / 60) % 60;
-        int seconds = static_cast<int>(zuluTime) % 60;
-
-        utc = SegmentDisplay::fixStringLength(std::to_string(hours), 2) + ":" +
-              SegmentDisplay::fixStringLength(std::to_string(minutes), 2) + ":" +
-              SegmentDisplay::fixStringLength(std::to_string(seconds), 2);
+        utc = SegmentDisplay::formatTimeFromSecondsOfDay(zuluTime);
     }
 
     std::string elapsedTime = "";
