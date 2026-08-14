@@ -7,6 +7,7 @@
 #include "xplane-version.hpp"
 
 #include <algorithm>
+#include <limits>
 
 TolissAGPProfile::TolissAGPProfile(ProductAGP *product) : AGPAircraftProfile(product) {
     Dataref::getInstance()->monitorExistingDataref<float>("AirbusFBW/PanelBrightnessLevel", [product](float brightness) {

@@ -7,6 +7,7 @@
 #include "logger.hpp"
 
 #include <algorithm>
+#include <limits>
 
 PA28AGPProfile::PA28AGPProfile(ProductAGP *product) : AGPAircraftProfile(product) {
     // Same lighting approach as the PA28 FCU profile: LCD and LEDs on with battery power,
