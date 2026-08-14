@@ -49,13 +49,14 @@ fi
 RELEASE_TAG=$VERSION-$XPLANE_VERSION
 SYMBOLS_DIR="build/symbols/$RELEASE_TAG"
 
-# Catches a no-op rebuild re-stripping an already-stripped $BIN, which yields empty debug info.
+# $BIN (make's link target) is never stripped; stripping happens on $BIN.stripped, which is
+# what gets shipped. That keeps debug info intact across repeated no-op rebuilds.
 MIN_DEBUG_KB=512
 check_debug_size() {
     SIZE_KB=$(du -sk "$1" 2>/dev/null | awk '{print $1}')
     if [ -z "$SIZE_KB" ] || [ "$SIZE_KB" -lt "$MIN_DEBUG_KB" ]; then
         echo "\033[1;31mERROR: debug info at $1 is only ${SIZE_KB:-0}KB - it looks empty.\033[0m"
-        echo "This usually means $BIN was already stripped by a previous run and make didn't relink it this time. Do a clean build and try again."
+        echo "If this is the first run after a build tree that stripped \$BIN in place, delete $BIN so make relinks it. Otherwise check that the build still compiles with -g1."
         exit 1
     fi
 }
@@ -98,8 +99,9 @@ for platform in $PLATFORMS; do
             exit 1; \
         fi && \
         objcopy --only-keep-debug $BIN $BIN.debug && \
-        strip --strip-debug --strip-unneeded $BIN && \
-        objcopy --add-gnu-debuglink=$BIN.debug $BIN"
+        cp $BIN $BIN.stripped && \
+        strip --strip-debug --strip-unneeded $BIN.stripped && \
+        objcopy --add-gnu-debuglink=$BIN.debug $BIN.stripped"
     else
         cmake -DCMAKE_TOOLCHAIN_FILE=toolchain-$platform.cmake -DSDK_VERSION=$SDK_VERSION -Bbuild/$platform -H.
         make -C build/$platform -j$JOBS
@@ -112,14 +114,16 @@ for platform in $PLATFORMS; do
             mac)
                 dsymutil "$BIN" -o "$BIN.dSYM"
                 check_debug_size "$BIN.dSYM"
-                strip -x "$BIN"
+                cp "$BIN" "$BIN.stripped"
+                strip -x "$BIN.stripped"
                 cp -r "$BIN.dSYM" "$SYMBOLS_DIR/${platform}_x64/"
                 ;;
             win)
                 x86_64-w64-mingw32-objcopy --only-keep-debug "$BIN" "$BIN.debug"
                 check_debug_size "$BIN.debug"
-                x86_64-w64-mingw32-strip -s "$BIN"
-                x86_64-w64-mingw32-objcopy --add-gnu-debuglink="$BIN.debug" "$BIN"
+                cp "$BIN" "$BIN.stripped"
+                x86_64-w64-mingw32-strip -s "$BIN.stripped"
+                x86_64-w64-mingw32-objcopy --add-gnu-debuglink="$BIN.debug" "$BIN.stripped"
                 cp "$BIN.debug" "$SYMBOLS_DIR/${platform}_x64/"
                 ;;
             lin)
@@ -130,8 +134,8 @@ for platform in $PLATFORMS; do
         esac
 
         echo "\n\n"
-        echo "\033[1;32m$platform build succeeded.\033[0m\nProduct: $BIN"
-        file $BIN
+        echo "\033[1;32m$platform build succeeded.\033[0m\nProduct: $BIN.stripped"
+        file $BIN.stripped
         sleep 3
     else
         echo "\033[1;31m$platform build failed.\033[0m"
@@ -148,8 +152,12 @@ fi
 
 for platform in $AVAILABLE_PLATFORMS; do
     mkdir -p build/dist/${platform}_x64
-    if [ -d "build/$platform/${platform}_x64" ]; then
-        cp build/$platform/${platform}_x64/${PROJECT_NAME}.xpl build/dist/${platform}_x64/${PROJECT_NAME}.xpl
+    SRC="build/$platform/${platform}_x64/${PROJECT_NAME}.xpl"
+    # Prefer the stripped copy; fall back to the raw binary for platforms built before this change.
+    if [ -f "$SRC.stripped" ]; then
+        cp "$SRC.stripped" build/dist/${platform}_x64/${PROJECT_NAME}.xpl
+    elif [ -f "$SRC" ]; then
+        cp "$SRC" build/dist/${platform}_x64/${PROJECT_NAME}.xpl
     fi
 done
 
