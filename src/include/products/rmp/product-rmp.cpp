@@ -255,41 +255,6 @@ void ProductRMP::setLedBrightness(RMPLed led, uint8_t brightness) {
     writeData({0x02, ProductRMP::IdentifierByte, 0xBB, 0x00, 0x00, 0x03, 0x49, static_cast<uint8_t>(led), brightness, 0x00, 0x00, 0x00, 0x00, 0x00});
 }
 
-void ProductRMP::parseSegment(const std::string &text, int expectedLength, std::string &outDigits, uint16_t &colonMask, int digitOffset) {
-    std::string digits;
-    uint16_t localColonMask = 0;
-
-    for (size_t i = 0; i < text.length(); ++i) {
-        char c = text[i];
-        if (c == '.' && !digits.empty()) {
-            localColonMask |= (1 << (digits.length() - 1));
-        } else if (c == '/') {
-            /* ToLiss datarefs use a C/course format for backup nav */
-            digits += '-';
-        } else {
-            digits += c;
-        }
-    }
-
-    // Calculate padding amount before modifying digits
-    int paddingAmount = 0;
-    if (digits.length() < static_cast<size_t>(expectedLength)) {
-        paddingAmount = expectedLength - static_cast<int>(digits.length());
-    }
-
-    // Shift colon positions by padding amount and add to global mask with offset
-    colonMask |= (localColonMask << paddingAmount) << digitOffset;
-
-    // Pad or truncate to expected length
-    while (digits.length() < static_cast<size_t>(expectedLength)) {
-        digits = ' ' + digits; // Left-pad with spaces
-    }
-    if (digits.length() > static_cast<size_t>(expectedLength)) {
-        digits = digits.substr(digits.length() - expectedLength);
-    }
-    outDigits += digits;
-}
-
 void ProductRMP::setDisplayText(const std::string &active, const std::string &stby) {
     if (active == cachedActiveDisplay && stby == cachedStbyDisplay) {
         return;
@@ -309,8 +274,9 @@ void ProductRMP::setDisplayText(const std::string &active, const std::string &st
     uint16_t colonMask = 0;
 
     /* Standby is first, Active is second */
-    parseSegment(stby, 6, allDigits, colonMask, 0);
-    parseSegment(active, 6, allDigits, colonMask, 6);
+    /* ToLiss datarefs use a C/course format for backup nav, hence the '/' -> '-' replacement */
+    SegmentDisplay::parseSegmentText(stby, 6, allDigits, colonMask, 0, SegmentDisplay::DotPlacement::PrecedingDigit, '-');
+    SegmentDisplay::parseSegmentText(active, 6, allDigits, colonMask, 6, SegmentDisplay::DotPlacement::PrecedingDigit, '-');
 
     for (int digitIndex = 0; digitIndex < 12; ++digitIndex) {
         char c = allDigits[digitIndex];

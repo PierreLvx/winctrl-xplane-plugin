@@ -171,57 +171,6 @@ void ProductAGP::setLedBrightness(AGPLed led, uint8_t brightness) {
     writeData({0x02, ProductAGP::IdentifierByte, 0xBB, 0x00, 0x00, 0x03, 0x49, static_cast<uint8_t>(led), brightness, 0x00, 0x00, 0x00, 0x00, 0x00});
 }
 
-void ProductAGP::parseSegment(const std::string &text, int expectedLength, std::string &outDigits, uint16_t &colonMask, int digitOffset) {
-    std::string digits;
-    uint16_t localColonMask = 0;
-
-    for (size_t i = 0; i < text.length(); ++i) {
-        char c = text[i];
-        if (c == ':' || c == '.') {
-            if (!digits.empty()) {
-                if (expectedLength >= 6) {
-                    // Standard: Enable bit for digit before (Left) and digit after (Right)
-
-                    if (c == ':') {
-                        localColonMask |= (1 << (digits.length() - 1)); // Upper Dot
-                    }
-
-                    localColonMask |= (1 << digits.length()); // Lower Dot
-                } else {
-                    // 4-Digit Displays: Enable bit for digit after (Right) and next digit (Right + 1)
-                    // The digit 'digits.length()' is the one we are about to add next.
-
-                    if (c == ':') {
-                        localColonMask |= (1 << digits.length()); // Upper Dot
-                    }
-
-                    localColonMask |= (1 << (digits.length() + 1)); // Lower Dot
-                }
-            }
-        } else {
-            digits += c;
-        }
-    }
-
-    // Calculate padding amount before modifying digits
-    int paddingAmount = 0;
-    if (digits.length() < static_cast<size_t>(expectedLength)) {
-        paddingAmount = expectedLength - static_cast<int>(digits.length());
-    }
-
-    // Shift colon positions by padding amount and add to global mask with offset
-    colonMask |= (localColonMask << paddingAmount) << digitOffset;
-
-    // Pad or truncate to expected length
-    while (digits.length() < static_cast<size_t>(expectedLength)) {
-        digits = ' ' + digits; // Left-pad with spaces
-    }
-    if (digits.length() > static_cast<size_t>(expectedLength)) {
-        digits = digits.substr(digits.length() - expectedLength);
-    }
-    outDigits += digits;
-}
-
 void ProductAGP::setLCDText(const std::string &chrono, const std::string &utcTime, const std::string &elapsedTime) {
     std::vector<uint8_t> packet = {
         0xF0, 0x00, packetNumber, 0x35, ProductAGP::IdentifierByte,
@@ -229,35 +178,17 @@ void ProductAGP::setLCDText(const std::string &chrono, const std::string &utcTim
         0x00, 0x24, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
     packet.resize(64, 0x00);
 
-    const int rowOffsets[8] = {25, 29, 33, 37, 41, 45, 49, 53};
+    const int segmentRowOffsets[7] = {25, 29, 33, 37, 41, 45, 49};
+    const int colonRowOffset = 53;
 
     std::string allDigits;
     uint16_t colonMask = 0;
 
-    parseSegment(chrono, 4, allDigits, colonMask, 0);
-    parseSegment(utcTime, 6, allDigits, colonMask, 4);
-    parseSegment(elapsedTime, 4, allDigits, colonMask, 10);
+    SegmentDisplay::parseSegmentText(chrono, 4, allDigits, colonMask, 0, SegmentDisplay::DotPlacement::DualDot);
+    SegmentDisplay::parseSegmentText(utcTime, 6, allDigits, colonMask, 4, SegmentDisplay::DotPlacement::DualDot);
+    SegmentDisplay::parseSegmentText(elapsedTime, 4, allDigits, colonMask, 10, SegmentDisplay::DotPlacement::DualDot);
 
-    for (int digitIndex = 0; digitIndex < 14; ++digitIndex) {
-        char c = allDigits[digitIndex];
-        uint8_t charMask = SegmentDisplay::getSegmentMask(c);
-
-        for (int segIndex = 0; segIndex < 7; ++segIndex) {
-            if (charMask & (1 << segIndex)) {
-                int byteOffset = rowOffsets[segIndex] + (digitIndex / 8);
-
-                int bitPos = digitIndex % 8;
-
-                packet[byteOffset] |= (1 << bitPos);
-            }
-        }
-
-        if (colonMask & (1 << digitIndex)) {
-            int byteOffset = rowOffsets[7] + (digitIndex / 8);
-            int bitPos = digitIndex % 8;
-            packet[byteOffset] |= (1 << bitPos);
-        }
-    }
+    SegmentDisplay::encodeBitplane(packet, allDigits, colonMask, segmentRowOffsets, 7, colonRowOffset);
 
     writeData(packet);
 
