@@ -168,7 +168,10 @@ void ProductTCAS::setLedBrightness(TCASLed led, uint8_t brightness) {
     writeData({0x02, ProductTCAS::IdentifierByte, 0xBB, 0x00, 0x00, 0x03, 0x49, static_cast<uint8_t>(led), brightness, 0x00, 0x00, 0x00, 0x00, 0x00});
 }
 
-void ProductTCAS::setLCDText(const std::string &squawkCode) {
+void ProductTCAS::setLCDText(const std::string &text) {
+    // The panel has four digits. A longer string would set bits the digits don't own.
+    const std::string squawkCode = text.substr(0, 4);
+
     std::vector<uint8_t> packet = {
         0xF0, 0x00, packetNumber, 0x35, ProductTCAS::IdentifierByte,
         0xBB, 0x00, 0x00, 0x02, 0x01, 0x00, 0x00, 0xFF, 0xFF, 0x00, 0x00,
